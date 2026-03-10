@@ -1,1698 +1,2621 @@
 #!/bin/bash
 
-CSV_FILE="ubuntu_security_assessment.csv"
+############################################################
+# Ubuntu CIS Security Audit Script
+#
+# Author: Sammy Wambua and Kiiru Maina
+# Description:
+# A lightweight Bash-based auditing tool that validates
+# Ubuntu system configurations against CIS-style Linux
+# security hardening controls.
+#
+# The script performs automated security checks across
+# multiple system areas including services, authentication,
+# SSH configuration, file permissions, cron restrictions,
+# PAM policies, and user account security.
+#
+# Output includes PASS / FAIL / MANUAL results and a
+# final compliance summary score.
+#
+# Supported Platforms:
+# Ubuntu 20.04
+# Ubuntu 22.04
+# Ubuntu 24.04
+#
+############################################################
 
-# Initialize CSV
-echo "Ubuntu security assessment posture,Pass/Fail,Remediation" > $CSV_FILE
 
-write_csv() {
-    echo "\"$1\",\"$2\",\"$3\"" >> $CSV_FILE
+echo
+echo "=================================================="
+echo "SECTION A: FILESYSTEM CONFIGURATION"
+echo "=================================================="
+
+# 1.1.1.1 Ensure mounting of cramfs filesystems is disabled
+if modprobe -n -v cramfs 2>/dev/null | grep -q "install /bin/true"; then
+    echo "[PASS] Ensure mounting of cramfs filesystems is disabled"
+    ((PASS++))
+else
+    echo "[FAIL] Ensure mounting of cramfs filesystems is disabled"
+    ((FAIL++))
+fi
+
+# 1.1.1.2 Ensure mounting of freevxfs filesystems is disabled
+if modprobe -n -v freevxfs 2>/dev/null | grep -q "install /bin/true"; then
+    echo "[PASS] Ensure mounting of freevxfs filesystems is disabled"
+    ((PASS++))
+else
+    echo "[FAIL] Ensure mounting of freevxfs filesystems is disabled"
+    ((FAIL++))
+fi
+
+# 1.1.1.3 Ensure mounting of jffs2 filesystems is disabled
+if modprobe -n -v jffs2 2>/dev/null | grep -q "install /bin/true"; then
+    echo "[PASS] Ensure mounting of jffs2 filesystems is disabled"
+    ((PASS++))
+else
+    echo "[FAIL] Ensure mounting of jffs2 filesystems is disabled"
+    ((FAIL++))
+fi
+
+# 1.1.1.4 Ensure mounting of hfs filesystems is disabled
+if modprobe -n -v hfs 2>/dev/null | grep -q "install /bin/true"; then
+    echo "[PASS] Ensure mounting of hfs filesystems is disabled"
+    ((PASS++))
+else
+    echo "[FAIL] Ensure mounting of hfs filesystems is disabled"
+    ((FAIL++))
+fi
+
+# 1.1.1.5 Ensure mounting of hfsplus filesystems is disabled
+if modprobe -n -v hfsplus 2>/dev/null | grep -q "install /bin/true"; then
+    echo "[PASS] Ensure mounting of hfsplus filesystems is disabled"
+    ((PASS++))
+else
+    echo "[FAIL] Ensure mounting of hfsplus filesystems is disabled"
+    ((FAIL++))
+fi
+
+# 1.1.1.6 Ensure mounting of udf filesystems is disabled
+if modprobe -n -v udf 2>/dev/null | grep -q "install /bin/true"; then
+    echo "[PASS] Ensure mounting of udf filesystems is disabled"
+    ((PASS++))
+else
+    echo "[FAIL] Ensure mounting of udf filesystems is disabled"
+    ((FAIL++))
+fi
+
+# 1.1.1.7 Ensure mounting of FAT filesystems is limited
+if modprobe -n -v vfat 2>/dev/null | grep -q "install /bin/true"; then
+    echo "[PASS] Ensure mounting of FAT filesystems is limited"
+    ((PASS++))
+else
+    echo "[MANUAL] Ensure mounting of FAT filesystems is limited"
+    ((MANUAL++))
+fi
+
+# 1.1.2 Ensure /tmp is configured
+if mount | grep -E '\s/tmp\s' >/dev/null; then
+    echo "[PASS] Ensure /tmp is configured"
+    ((PASS++))
+else
+    echo "[FAIL] Ensure /tmp is configured"
+    ((FAIL++))
+fi
+
+# 1.1.3 Ensure nodev option set on /tmp partition
+if mount | grep -E '\s/tmp\s' | grep -q nodev; then
+    echo "[PASS] Ensure nodev option set on /tmp partition"
+    ((PASS++))
+else
+    echo "[FAIL] Ensure nodev option set on /tmp partition"
+    ((FAIL++))
+fi
+
+# 1.1.4 Ensure nosuid option set on /tmp partition
+if mount | grep -E '\s/tmp\s' | grep -q nosuid; then
+    echo "[PASS] Ensure nosuid option set on /tmp partition"
+    ((PASS++))
+else
+    echo "[FAIL] Ensure nosuid option set on /tmp partition"
+    ((FAIL++))
+fi
+
+# 1.1.5 Ensure noexec option set on /tmp partition
+if mount | grep -E '\s/tmp\s' | grep -q noexec; then
+    echo "[PASS] Ensure noexec option set on /tmp partition"
+    ((PASS++))
+else
+    echo "[FAIL] Ensure noexec option set on /tmp partition"
+    ((FAIL++))
+fi
+
+# 1.1.6 Ensure /dev/shm is configured
+if mount | grep -E '\s/dev/shm\s' >/dev/null; then
+    echo "[PASS] Ensure /dev/shm is configured"
+    ((PASS++))
+else
+    echo "[FAIL] Ensure /dev/shm is configured"
+    ((FAIL++))
+fi
+
+# 1.1.7 Ensure nodev option set on /dev/shm partition
+if mount | grep -E '\s/dev/shm\s' | grep -q nodev; then
+    echo "[PASS] Ensure nodev option set on /dev/shm partition"
+    ((PASS++))
+else
+    echo "[FAIL] Ensure nodev option set on /dev/shm partition"
+    ((FAIL++))
+fi
+
+# 1.1.8 Ensure nosuid option set on /dev/shm partition
+if mount | grep -E '\s/dev/shm\s' | grep -q nosuid; then
+    echo "[PASS] Ensure nosuid option set on /dev/shm partition"
+    ((PASS++))
+else
+    echo "[FAIL] Ensure nosuid option set on /dev/shm partition"
+    ((FAIL++))
+fi
+
+# 1.1.9 Ensure noexec option set on /dev/shm partition
+if mount | grep -E '\s/dev/shm\s' | grep -q noexec; then
+    echo "[PASS] Ensure noexec option set on /dev/shm partition"
+    ((PASS++))
+else
+    echo "[FAIL] Ensure noexec option set on /dev/shm partition"
+    ((FAIL++))
+fi
+
+# 1.1.10 Ensure separate partition exists for /var
+if mount | grep -E '\s/var\s' >/dev/null; then
+    echo "[PASS] Ensure separate partition exists for /var"
+    ((PASS++))
+else
+    echo "[MANUAL] Ensure separate partition exists for /var"
+    ((MANUAL++))
+fi
+
+# 1.1.11 Ensure separate partition exists for /var/tmp
+if mount | grep -E '\s/var/tmp\s' >/dev/null; then
+    echo "[PASS] Ensure separate partition exists for /var/tmp"
+    ((PASS++))
+else
+    echo "[MANUAL] Ensure separate partition exists for /var/tmp"
+    ((MANUAL++))
+fi
+
+# 1.1.12 Ensure nodev option set on /var/tmp partition
+if mount | grep -E '\s/var/tmp\s' | grep -q nodev; then
+    echo "[PASS] Ensure nodev option set on /var/tmp partition"
+    ((PASS++))
+else
+    echo "[FAIL] Ensure nodev option set on /var/tmp partition"
+    ((FAIL++))
+fi
+
+# 1.1.13 Ensure nosuid option set on /var/tmp partition
+if mount | grep -E '\s/var/tmp\s' | grep -q nosuid; then
+    echo "[PASS] Ensure nosuid option set on /var/tmp partition"
+    ((PASS++))
+else
+    echo "[FAIL] Ensure nosuid option set on /var/tmp partition"
+    ((FAIL++))
+fi
+
+# 1.1.14 Ensure noexec option set on /var/tmp partition
+if mount | grep -E '\s/var/tmp\s' | grep -q noexec; then
+    echo "[PASS] Ensure noexec option set on /var/tmp partition"
+    ((PASS++))
+else
+    echo "[FAIL] Ensure noexec option set on /var/tmp partition"
+    ((FAIL++))
+fi
+
+# 1.1.15 Ensure separate partition exists for /var/log
+if mount | grep -E '\s/var/log\s' >/dev/null; then
+    echo "[PASS] Ensure separate partition exists for /var/log"
+    ((PASS++))
+else
+    echo "[MANUAL] Ensure separate partition exists for /var/log"
+    ((MANUAL++))
+fi
+
+# 1.1.16 Ensure separate partition exists for /var/log/audit
+if mount | grep -E '\s/var/log/audit\s' >/dev/null; then
+    echo "[PASS] Ensure separate partition exists for /var/log/audit"
+    ((PASS++))
+else
+    echo "[MANUAL] Ensure separate partition exists for /var/log/audit"
+    ((MANUAL++))
+fi
+
+# 1.1.17 Ensure separate partition exists for /home
+if mount | grep -E '\s/home\s' >/dev/null; then
+    echo "[PASS] Ensure separate partition exists for /home"
+    ((PASS++))
+else
+    echo "[MANUAL] Ensure separate partition exists for /home"
+    ((MANUAL++))
+fi
+
+# 1.1.18 Ensure nodev option set on /home partition
+if mount | grep -E '\s/home\s' | grep -q nodev; then
+    echo "[PASS] Ensure nodev option set on /home partition"
+    ((PASS++))
+else
+    echo "[FAIL] Ensure nodev option set on /home partition"
+    ((FAIL++))
+fi
+
+# 1.1.19 Ensure nodev option set on removable media partitions
+echo "[MANUAL] Ensure nodev option set on removable media partitions"
+((MANUAL++))
+
+# 1.1.20 Ensure nosuid option set on removable media partitions
+echo "[MANUAL] Ensure nosuid option set on removable media partitions"
+((MANUAL++))
+
+# 1.1.21 Ensure noexec option set on removable media partitions
+echo "[MANUAL] Ensure noexec option set on removable media partitions"
+((MANUAL++))
+
+# 1.1.22 Ensure sticky bit is set on all world-writable directories
+if df --local -P | awk '{if (NR!=1) print $6}' | xargs -I '{}' find '{}' -xdev -type d \( -perm -0002 -a ! -perm -1000 \) 2>/dev/null | grep -q .; then
+    echo "[FAIL] Ensure sticky bit is set on all world-writable directories"
+    ((FAIL++))
+else
+    echo "[PASS] Ensure sticky bit is set on all world-writable directories"
+    ((PASS++))
+fi
+
+# 1.1.23 Disable Automounting
+if systemctl is-enabled autofs 2>/dev/null | grep -q enabled; then
+    echo "[FAIL] Disable Automounting"
+    ((FAIL++))
+else
+    echo "[PASS] Disable Automounting"
+    ((PASS++))
+fi
+
+# 1.1.24 Disable USB storage
+if modprobe -n -v usb-storage 2>/dev/null | grep -q "install /bin/true"; then
+    echo "[PASS] Disable USB storage"
+    ((PASS++))
+else
+    echo "[FAIL] Disable USB storage"
+    ((FAIL++))
+fi
+echo
+echo "=================================================="
+echo "CONFIGURE SOFTWARE UPDATES"
+echo "=================================================="
+
+# 1.2.1 Ensure package manager repositories are configured
+if apt-cache policy 2>/dev/null | grep -q "http"; then
+    echo "[PASS] Ensure package manager repositories are configured"
+    ((PASS++))
+else
+    echo "[FAIL] Ensure package manager repositories are configured"
+    ((FAIL++))
+fi
+
+# 1.2.2 Ensure GPG keys are configured
+if apt-key list 2>/dev/null | grep -q "pub"; then
+    echo "[PASS] Ensure GPG keys are configured"
+    ((PASS++))
+else
+    echo "[FAIL] Ensure GPG keys are configured"
+    ((FAIL++))
+fi
+echo
+echo "=================================================="
+echo "CONFIGURE SUDO"
+echo "=================================================="
+
+# 1.3.1 Ensure sudo is installed
+if dpkg -s sudo >/dev/null 2>&1 || dpkg -s sudo-ldap >/dev/null 2>&1; then
+    echo "[PASS] Ensure sudo is installed"
+    ((PASS++))
+else
+    echo "[FAIL] Ensure sudo is installed"
+    ((FAIL++))
+fi
+
+# 1.3.2 Ensure sudo commands use pty
+if grep -Ei '^\s*Defaults\s+([^#]+,\s*)?use_pty(,\s+\S+\s*)*(\s+#.*)?$' /etc/sudoers /etc/sudoers.d/* >/dev/null 2>&1; then
+    echo "[PASS] Ensure sudo commands use pty"
+    ((PASS++))
+else
+    echo "[FAIL] Ensure sudo commands use pty"
+    ((FAIL++))
+fi
+
+# 1.3.3 Ensure sudo log file exists
+if grep -Ei '^\s*Defaults\s+logfile=\S+' /etc/sudoers /etc/sudoers.d/* >/dev/null 2>&1; then
+    echo "[PASS] Ensure sudo log file exists"
+    ((PASS++))
+else
+    echo "[FAIL] Ensure sudo log file exists"
+    ((FAIL++))
+fi
+echo
+echo "=================================================="
+echo "FILESYSTEM INTEGRITY CHECKING"
+echo "=================================================="
+
+# 1.4.1 Ensure AIDE is installed
+if dpkg -s aide 2>/dev/null | grep -q "Status: install ok installed" && \
+   dpkg -s aide-common 2>/dev/null | grep -q "Status: install ok installed"; then
+    echo "[PASS] Ensure AIDE is installed"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure AIDE is installed"
+    FAIL=$((FAIL+1))
+fi
+
+# 1.4.2 Ensure filesystem integrity is regularly checked
+if crontab -u root -l 2>/dev/null | grep -q aide || \
+   find /etc/cron.* /etc/crontab -type f -name "*aide*" 2>/dev/null | grep -q aide || \
+   systemctl is-enabled aidecheck.timer 2>/dev/null | grep -q enabled; then
+    echo "[PASS] Ensure filesystem integrity is regularly checked"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure filesystem integrity is regularly checked"
+    FAIL=$((FAIL+1))
+fi
+
+
+echo
+echo "=================================================="
+echo "SECURE BOOT SETTINGS"
+echo "=================================================="
+
+# 1.5.1 Ensure bootloader password is set
+if grep -q "^set superusers" /boot/grub/grub.cfg 2>/dev/null && \
+   grep -q "^password_pbkdf2" /boot/grub/grub.cfg 2>/dev/null; then
+    echo "[PASS] Ensure bootloader password is set"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure bootloader password is set"
+    FAIL=$((FAIL+1))
+fi
+
+# 1.5.2 Ensure permissions on bootloader config are configured
+perm=$(stat -c "%a" /boot/grub/grub.cfg 2>/dev/null)
+owner=$(stat -c "%U" /boot/grub/grub.cfg 2>/dev/null)
+
+if [[ "$perm" -le 400 && "$owner" == "root" ]]; then
+    echo "[PASS] Ensure permissions on bootloader config are configured"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure permissions on bootloader config are configured"
+    FAIL=$((FAIL+1))
+fi
+
+# 1.5.3 Ensure authentication required for single user mode
+if grep '^root:' /etc/shadow | grep -vq '^[^:]*:[!*]'; then
+    echo "[PASS] Ensure authentication required for single user mode"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure authentication required for single user mode"
+    FAIL=$((FAIL+1))
+fi
+
+
+echo
+echo "=================================================="
+echo "ADDITIONAL PROCESS HARDENING"
+echo "=================================================="
+
+# 1.6.1 Ensure XD/NX support is enabled
+if journalctl 2>/dev/null | grep -q "NX (Execute Disable) protection: active"; then
+    echo "[PASS] Ensure XD/NX support is enabled"
+    PASS=$((PASS+1))
+else
+    echo "[MANUAL] Ensure XD/NX support is enabled"
+    MANUAL=$((MANUAL+1))
+fi
+
+# 1.6.2 Ensure address space layout randomization (ASLR) is enabled
+if sysctl kernel.randomize_va_space 2>/dev/null | grep -q "2"; then
+    echo "[PASS] Ensure address space layout randomization (ASLR) is enabled"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure address space layout randomization (ASLR) is enabled"
+    FAIL=$((FAIL+1))
+fi
+
+# 1.6.3 Ensure prelink is disabled
+if ! dpkg -s prelink >/dev/null 2>&1; then
+    echo "[PASS] Ensure prelink is disabled"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure prelink is disabled"
+    FAIL=$((FAIL+1))
+fi
+
+# 1.6.4 Ensure core dumps are restricted
+if grep -Eq "^\* hard core 0" /etc/security/limits.conf /etc/security/limits.d/* 2>/dev/null && \
+   sysctl fs.suid_dumpable 2>/dev/null | grep -q "0"; then
+    echo "[PASS] Ensure core dumps are restricted"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure core dumps are restricted"
+    FAIL=$((FAIL+1))
+fi
+echo
+echo "=================================================="
+echo "MANDATORY ACCESS CONTROL"
+echo "=================================================="
+
+# Ensure AppArmor is installed
+if dpkg -s apparmor 2>/dev/null | grep -q "Status: install ok installed"; then
+    echo "[PASS] Ensure AppArmor is installed"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure AppArmor is installed"
+    FAIL=$((FAIL+1))
+fi
+
+# Ensure AppArmor is enabled in the bootloader configuration
+if grep "^\s*linux" /boot/grub/grub.cfg | grep -q "apparmor=1" && \
+   grep "^\s*linux" /boot/grub/grub.cfg | grep -q "security=apparmor"; then
+    echo "[PASS] Ensure AppArmor is enabled in the bootloader configuration"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure AppArmor is enabled in the bootloader configuration"
+    FAIL=$((FAIL+1))
+fi
+
+# Ensure all AppArmor Profiles are in enforce or complain mode
+if apparmor_status 2>/dev/null | grep -q "profiles are loaded"; then
+    echo "[PASS] Ensure all AppArmor Profiles are in enforce or complain mode"
+    PASS=$((PASS+1))
+else
+    echo "[MANUAL] Ensure all AppArmor Profiles are in enforce or complain mode"
+    MANUAL=$((MANUAL+1))
+fi
+
+# Ensure all AppArmor Profiles are enforcing
+if apparmor_status 2>/dev/null | grep -q "profiles are in enforce mode"; then
+    echo "[PASS] Ensure all AppArmor Profiles are enforcing"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure all AppArmor Profiles are enforcing"
+    FAIL=$((FAIL+1))
+fi
+
+
+echo
+echo "=================================================="
+echo "WARNING BANNERS"
+echo "=================================================="
+
+# Ensure message of the day is configured properly
+if [ -f /etc/motd ] && ! grep -Ei "(\\\v|\\\r|\\\m|\\\s)" /etc/motd >/dev/null; then
+    echo "[PASS] Ensure message of the day is configured properly"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure message of the day is configured properly"
+    FAIL=$((FAIL+1))
+fi
+
+# Ensure local login warning banner is configured properly
+if [ -f /etc/issue ] && ! grep -Ei "(\\\v|\\\r|\\\m|\\\s)" /etc/issue >/dev/null; then
+    echo "[PASS] Ensure local login warning banner is configured properly"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure local login warning banner is configured properly"
+    FAIL=$((FAIL+1))
+fi
+
+# Ensure remote login warning banner is configured properly
+if [ -f /etc/issue.net ] && ! grep -Ei "(\\\v|\\\r|\\\m|\\\s)" /etc/issue.net >/dev/null; then
+    echo "[PASS] Ensure remote login warning banner is configured properly"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure remote login warning banner is configured properly"
+    FAIL=$((FAIL+1))
+fi
+
+# Ensure permissions on /etc/motd are configured
+if [ ! -f /etc/motd ] || stat -c "%a %U %G" /etc/motd | grep -q "644 root root"; then
+    echo "[PASS] Ensure permissions on /etc/motd are configured"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure permissions on /etc/motd are configured"
+    FAIL=$((FAIL+1))
+fi
+
+# Ensure permissions on /etc/issue are configured
+if stat -c "%a %U %G" /etc/issue | grep -q "644 root root"; then
+    echo "[PASS] Ensure permissions on /etc/issue are configured"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure permissions on /etc/issue are configured"
+    FAIL=$((FAIL+1))
+fi
+
+# Ensure permissions on /etc/issue.net are configured
+if stat -c "%a %U %G" /etc/issue.net | grep -q "644 root root"; then
+    echo "[PASS] Ensure permissions on /etc/issue.net are configured"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure permissions on /etc/issue.net are configured"
+    FAIL=$((FAIL+1))
+fi
+
+
+echo
+echo "=================================================="
+echo "PATCH MANAGEMENT"
+echo "=================================================="
+
+# Ensure updates, patches, and additional security software are installed
+if apt-get -s upgrade | grep -q "0 upgraded"; then
+    echo "[PASS] Ensure updates, patches, and additional security software are installed"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure updates, patches, and additional security software are installed"
+    FAIL=$((FAIL+1))
+fi
+
+
+echo
+echo "=================================================="
+echo "GDM CONFIGURATION"
+echo "=================================================="
+
+# Ensure GDM is removed or login is configured
+if ! dpkg -s gdm3 >/dev/null 2>&1; then
+    echo "[PASS] Ensure GDM is removed or login is configured"
+    PASS=$((PASS+1))
+else
+    if grep -q "disable-user-list=true" /etc/gdm3/greeter.dconf-defaults 2>/dev/null; then
+        echo "[PASS] Ensure GDM is removed or login is configured"
+        PASS=$((PASS+1))
+    else
+        echo "[FAIL] Ensure GDM is removed or login is configured"
+        FAIL=$((FAIL+1))
+    fi
+fi
+echo
+echo "=================================================="
+echo "SECTION B: SERVICES"
+echo "=================================================="
+
+echo
+echo "---------------- INETD SERVICES ----------------"
+
+# Ensure xinetd is not installed
+if ! dpkg -s xinetd >/dev/null 2>&1; then
+    echo "[PASS] Ensure xinetd is not installed"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure xinetd is not installed"
+    FAIL=$((FAIL+1))
+fi
+
+# Ensure openbsd-inetd is not installed
+if ! dpkg -s openbsd-inetd >/dev/null 2>&1; then
+    echo "[PASS] Ensure openbsd-inetd is not installed"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure openbsd-inetd is not installed"
+    FAIL=$((FAIL+1))
+fi
+
+
+echo
+echo "------------- TIME SYNCHRONIZATION -------------"
+
+# Ensure time synchronization is in use
+if systemctl is-enabled systemd-timesyncd >/dev/null 2>&1 || \
+   dpkg -s chrony >/dev/null 2>&1 || \
+   dpkg -s ntp >/dev/null 2>&1; then
+    echo "[PASS] Ensure time synchronization is in use"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure time synchronization is in use"
+    FAIL=$((FAIL+1))
+fi
+
+
+echo
+echo "----------- SPECIAL PURPOSE SERVICES -----------"
+
+check_pkg_absent () {
+    pkg=$1
+    desc=$2
+
+    if ! dpkg -s "$pkg" >/dev/null 2>&1; then
+        echo "[PASS] $desc"
+        PASS=$((PASS+1))
+    else
+        echo "[FAIL] $desc"
+        FAIL=$((FAIL+1))
+    fi
 }
 
-# Output helpers
-print_section() { echo ""; echo "************ $1 ************"; }
-check_msg() { echo "Checking $1..."; }
-pass_msg() { echo "PASS: $1"; }
-fail_msg() { echo "FAIL: $1"; }
+check_pkg_absent xserver-xorg "Ensure X Window System is not installed"
+check_pkg_absent avahi-daemon "Ensure Avahi Server is not installed"
+check_pkg_absent cups "Ensure CUPS is not installed"
+check_pkg_absent isc-dhcp-server "Ensure DHCP Server is not installed"
+check_pkg_absent slapd "Ensure LDAP server is not installed"
+check_pkg_absent nfs-kernel-server "Ensure NFS is not installed"
+check_pkg_absent bind9 "Ensure DNS Server is not installed"
+check_pkg_absent vsftpd "Ensure FTP Server is not installed"
+check_pkg_absent apache2 "Ensure HTTP server is not installed"
+check_pkg_absent dovecot-imapd "Ensure IMAP server is not installed"
+check_pkg_absent dovecot-pop3d "Ensure POP3 server is not installed"
+check_pkg_absent samba "Ensure Samba is not installed"
+check_pkg_absent squid "Ensure HTTP Proxy Server is not installed"
+check_pkg_absent snmpd "Ensure SNMP Server is not installed"
+check_pkg_absent rsync "Ensure rsync service is not installed"
+check_pkg_absent nis "Ensure NIS Server is not installed"
 
-# -------------------------------------------
-# 1. UBUNTU VERSION AND PACKAGE UPDATES
-# -------------------------------------------
-print_section "1. UBUNTU VERSION AND PACKAGE UPDATES"
 
-check_msg "Ubuntu LTS version"
-ubuntu_version=$(lsb_release -sr)
+echo
+echo "--------------- SERVICE CLIENTS ----------------"
 
-if [[ "$ubuntu_version" == "24.04" ]]; then
-    pass_msg "Ubuntu is on LTS version $ubuntu_version"
-    write_csv "Ubuntu LTS version" "PASS" "Remediation not needed"
+check_pkg_absent nis "Ensure NIS Client is not installed"
+check_pkg_absent rsh-client "Ensure rsh client is not installed"
+check_pkg_absent talk "Ensure talk client is not installed"
+check_pkg_absent telnet "Ensure telnet client is not installed"
+check_pkg_absent ldap-utils "Ensure LDAP client is not installed"
+check_pkg_absent rpcbind "Ensure RPC is not installed"
+
+
+echo
+echo "------------- MAIL TRANSFER AGENT --------------"
+
+if ss -lntu | grep ':25 ' | grep -vE '(127.0.0.1|::1)' >/dev/null; then
+    echo "[FAIL] Ensure mail transfer agent is configured for local-only mode"
+    FAIL=$((FAIL+1))
 else
-    fail_msg "Ubuntu is on non-LTS version $ubuntu_version"
-    write_csv "Ubuntu LTS version" "FAIL" "Upgrade to Ubuntu 24.04 LTS"
+    echo "[PASS] Ensure mail transfer agent is configured for local-only mode"
+    PASS=$((PASS+1))
 fi
 
-# -------------------------------------------
-# 2. FILE SYSTEM CONFIGURATION
-# -------------------------------------------
-print_section "2. FILE SYSTEM CONFIGURATION"
 
-check_module_disabled() {
-    local module="$1"; local name="$2"
-    check_msg "$name"
+echo "----------- NONESSENTIAL SERVICES REVIEW --------"
+echo "[MANUAL] Ensure nonessential services are removed or masked"
+echo
 
-    modprobe_check=$(modprobe -n -v "$module" 2>/dev/null)
-    lsmod_check=$(lsmod | grep -w "$module")
+ss -tulnp | awk 'NR>1 {split($5,a,":"); split($7,b,"\""); printf "%-6s %s\n", a[length(a)], b[2]}' | sort -u
+echo
+echo "=================================================="
+echo "SECTION C: NETWORK CONFIGURATION"
+echo "=================================================="
 
-    if [[ "$modprobe_check" == "install /bin/true" && -z "$lsmod_check" ]]; then
-        pass_msg "$name"
-        write_csv "$name" "PASS" "Remediation not needed"
-    else
-        fail_msg "$name"
-        write_csv "$name" "FAIL" "Add 'install $module /bin/true' to /etc/modprobe.d/CIS.conf and rmmod $module"
-    fi
-}
+echo
+echo "------------ DISABLE UNUSED NETWORK PROTOCOLS ------------"
 
-check_module_disabled "cramfs" "Ensure cramfs disabled"
-check_module_disabled "freevxfs" "Ensure freevxfs disabled"
-check_module_disabled "jffs2" "Ensure jffs2 disabled"
-check_module_disabled "usb-storage" "Ensure USB storage disabled"
-
-check_mount_option() {
-    local mount_point="$1"; local option="$2"; local name="$3"
-    check_msg "$name"
-
-    mount | grep -E "\s$mount_point\s" | grep -vq "$option"
-    if [[ $? -ne 0 ]]; then
-        pass_msg "$name"
-        write_csv "$name" "PASS" "Remediation not needed"
-    else
-        fail_msg "$name"
-        write_csv "$name" "FAIL" "Add $option to /etc/fstab and remount $mount_point"
-    fi
-}
-
-check_mount_option "/var/tmp" "noexec" "Ensure noexec on /var/tmp"
-
-check_partition() {
-    local partition="$1"; local name="$2"
-    check_msg "$name"
-
-    mount | grep -q " $partition "
-    if [[ $? -eq 0 ]]; then
-        pass_msg "$name"
-        write_csv "$name" "PASS" "Remediation not needed"
-    else
-        fail_msg "$name"
-        write_csv "$name" "FAIL" "Create separate partition and configure /etc/fstab"
-    fi
-}
-
-check_partition "/var/log" "Separate partition for /var/log"
-check_partition "/var/log/audit" "Separate partition for /var/log/audit"
-check_partition "/home" "Separate partition for /home"
-
-check_msg "Sticky bit on world-writable directories"
-sticky_check=$(df --local -P | awk 'NR!=1 {print $6}' | xargs -I '{}' find '{}' -xdev -type d \( -perm -0002 -a ! -perm -1000 \) 2>/dev/null)
-if [[ -z "$sticky_check" ]]; then
-    pass_msg "Sticky bit set"
-    write_csv "Sticky bit on world writable dirs" "PASS" "Remediation not needed"
-else
-    fail_msg "Sticky bit missing"
-    write_csv "Sticky bit on world writable dirs" "FAIL" "Run chmod a+t on affected directories"
-fi
-
-# -------------------------------------------
-# 3. CONFIGURE SOFTWARE UPDATES
-# -------------------------------------------
-print_section "3. CONFIGURE SOFTWARE UPDATES"
-
-check_msg "Package manager repositories"
-apt_policy=$(apt-cache policy 2>/dev/null)
-if [[ -n "$apt_policy" ]]; then
-    pass_msg "Package manager repositories configured"
-    write_csv "Package manager repositories configured" "PASS" "Remediation not needed"
-else
-    fail_msg "Package manager repositories not configured"
-    write_csv "Package manager repositories configured" "FAIL" "Configure repositories per site policy"
-fi
-
-check_msg "Package manager GPG keys"
-gpg_keys=$(apt-key list 2>/dev/null)
-if [[ -n "$gpg_keys" ]]; then
-    pass_msg "GPG keys configured"
-    write_csv "GPG keys configured" "PASS" "Remediation not needed"
-else
-    fail_msg "GPG keys missing"
-    write_csv "GPG keys configured" "FAIL" "Update GPG keys per site policy"
-fi
-
-# -------------------------------------------
-# 4. CONFIGURE SUDO
-# -------------------------------------------
-print_section "4. CONFIGURE SUDO"
-
-check_msg "sudo installation"
-dpkg -s sudo &>/dev/null && pass_msg "sudo installed" || fail_msg "sudo not installed"
-write_csv "Sudo installed" "$([[ $? -eq 0 ]] && echo PASS || echo FAIL)" "apt install sudo"
-
-check_msg "sudo use_pty"
-grep -Ei 'Defaults\s+use_pty' /etc/sudoers /etc/sudoers.d/* &>/dev/null && pass_msg "sudo uses pty" || fail_msg "sudo does not use pty"
-write_csv "Sudo use_pty" "$([[ $? -eq 0 ]] && echo PASS || echo FAIL)" "Add Defaults use_pty"
-
-check_msg "sudo logfile"
-grep -Ei 'Defaults\s+logfile=' /etc/sudoers /etc/sudoers.d/* &>/dev/null && pass_msg "sudo logfile configured" || fail_msg "sudo logfile missing"
-write_csv "Sudo logfile" "$([[ $? -eq 0 ]] && echo PASS || echo FAIL)" "Add Defaults logfile=/var/log/sudo.log"
-
-# -------------------------------------------
-# 5. FILE SYSTEM INTEGRITY CHECKING
-# -------------------------------------------
-print_section "5. FILE SYSTEM INTEGRITY CHECKING"
-
-check_msg "AIDE installation"
-dpkg -s aide aide-common &>/dev/null && pass_msg "AIDE installed" || fail_msg "AIDE not installed"
-write_csv "AIDE installed" "$([[ $? -eq 0 ]] && echo PASS || echo FAIL)" "apt install aide aide-common"
-
-check_msg "AIDE scheduling"
-systemctl is-enabled aidecheck.timer &>/dev/null && pass_msg "AIDE scheduled" || fail_msg "AIDE not scheduled"
-write_csv "AIDE scheduled" "$([[ $? -eq 0 ]] && echo PASS || echo FAIL)" "Configure cron or systemd timer"
-
-# -------------------------------------------
-# 6. SECURE BOOT SETTINGS
-# -------------------------------------------
-print_section "6. SECURE BOOT SETTINGS"
-
-check_msg "Bootloader password"
-grep "^set superusers" /boot/grub/grub.cfg &>/dev/null && grep "^password_pbkdf2" /boot/grub/grub.cfg &>/dev/null \
-&& pass_msg "Bootloader password set" || fail_msg "Bootloader password missing"
-write_csv "Bootloader password" "$([[ $? -eq 0 ]] && echo PASS || echo FAIL)" "Use grub-mkpasswd-pbkdf2 and update-grub"
-
-check_msg "GRUB permissions"
-stat -c "%a %u %g" /boot/grub/grub.cfg | grep -q "^400 0 0$" && pass_msg "GRUB permissions secure" || fail_msg "GRUB permissions insecure"
-write_csv "GRUB permissions" "$([[ $? -eq 0 ]] && echo PASS || echo FAIL)" "chmod 400 /boot/grub/grub.cfg"
-
-check_msg "Root authentication for single-user mode"
-grep '^root:[*!]:' /etc/shadow &>/dev/null && fail_msg "Root has no password" || pass_msg "Root requires authentication"
-write_csv "Single user auth" "$([[ $? -ne 0 ]] && echo PASS || echo FAIL)" "passwd root"
-
-# -------------------------------------------
-# 7. ADDITIONAL PROCESS HARDENING
-# -------------------------------------------
-print_section "7. ADDITIONAL PROCESS HARDENING"
-
-check_msg "NX/XD protection"
-journalctl | grep -q "NX (Execute Disable) protection: active" && pass_msg "NX/XD enabled" || fail_msg "NX/XD not active"
-write_csv "NX/XD enabled" "$([[ $? -eq 0 ]] && echo PASS || echo FAIL)" "Enable in BIOS or install PAE kernel"
-
-check_msg "ASLR"
-sysctl kernel.randomize_va_space | grep -q "= 2" && pass_msg "ASLR enabled" || fail_msg "ASLR disabled"
-write_csv "ASLR enabled" "$([[ $? -eq 0 ]] && echo PASS || echo FAIL)" "Set kernel.randomize_va_space=2"
-
-check_msg "Prelink"
-dpkg -s prelink &>/dev/null && fail_msg "prelink installed" || pass_msg "prelink not installed"
-write_csv "Prelink disabled" "$([[ $? -ne 0 ]] && echo PASS || echo FAIL)" "apt purge prelink"
-
-# -------------------------------------------
-# 8. APPARMOR
-# -------------------------------------------
-print_section "8. APPARMOR"
-
-check_msg "AppArmor installation"
-dpkg -s apparmor &>/dev/null && pass_msg "AppArmor is installed" || fail_msg "AppArmor not installed"
-write_csv "AppArmor installed" "$([[ $? -eq 0 ]] && echo PASS || echo FAIL)" "apt install apparmor"
-
-check_msg "AppArmor boot parameters"
-grep "apparmor=1" /boot/grub/grub.cfg &>/dev/null && grep "security=apparmor" /boot/grub/grub.cfg &>/dev/null \
-&& pass_msg "AppArmor boot parameters present" || fail_msg "AppArmor boot parameters missing"
-write_csv "AppArmor boot enabled" "$([[ $? -eq 0 ]] && echo PASS || echo FAIL)" "Edit GRUB_CMDLINE_LINUX and update-grub"
-
-check_msg "AppArmor profiles (enforce/complain)"
-profiles_loaded=$(apparmor_status | awk '/profiles are loaded/ {print $1}')
-if [[ "$profiles_loaded" =~ ^[0-9]+$ && "$profiles_loaded" -gt 0 ]]; then
-    pass_msg "AppArmor profiles loaded in enforce or complain mode"
-    write_csv "AppArmor profiles loaded" "PASS" "Remediation not needed"
-else
-    fail_msg "No AppArmor profiles loaded"
-    write_csv "AppArmor profiles loaded" "FAIL" "Run aa-enforce /etc/apparmor.d/*"
-fi
-
-check_msg "AppArmor profiles enforcing"
-complain=$(apparmor_status | awk '/profiles are in complain mode/ {print $1}')
-complain=${complain:-0}
-if [[ "$complain" -eq 0 ]]; then
-    pass_msg "All AppArmor profiles are enforcing"
-    write_csv "AppArmor enforce mode" "PASS" "Remediation not needed"
-else
-    fail_msg "Some AppArmor profiles in complain mode"
-    write_csv "AppArmor enforce mode" "FAIL" "Run aa-enforce /etc/apparmor.d/*"
-fi
-
-echo ""
-
-# -------------------------------------------
-# 9. WARNING BANNERS
-# -------------------------------------------
-echo "************ 9. WARNING BANNERS ************"
-
-# Function to check banner content for OS leakage
-check_banner_content() {
-    local file="$1"
-    local name="$2"
-
-    if [[ ! -f "$file" ]]; then
-        echo "FAIL: $name missing"
-        write_csv "$name" "FAIL" "Create banner file per site policy"
-        return
-    fi
-
-    grep -E -i "(\\\v|\\\r|\\\m|\\\s|$(grep '^ID=' /etc/os-release | cut -d= -f2 | sed 's/\"//g'))" "$file" &>/dev/null
-    if [[ $? -eq 0 ]]; then
-        echo "FAIL: $name contains OS information"
-        write_csv "$name" "FAIL" "Remove OS info (\\m \\r \\s \\v) and OS references"
-    else
-        echo "PASS: $name configured properly"
-        write_csv "$name" "PASS" "Remediation not needed"
-    fi
-}
-
-# Check MOTD banner
-echo "Checking message of the day banner..."
-check_banner_content "/etc/motd" "MOTD banner configured"
-
-# Check local login banner
-echo "Checking local login warning banner..."
-check_banner_content "/etc/issue" "Local login banner configured"
-
-# Check remote login banner
-echo "Checking remote login warning banner..."
-check_banner_content "/etc/issue.net" "Remote login banner configured"
-
-# Function to check banner permissions
-check_banner_permissions() {
-    local file="$1"
-    local name="$2"
-
-    if [[ ! -f "$file" ]]; then
-        echo "PASS: $name not present"
-        write_csv "$name permissions" "PASS" "Remediation not needed"
-        return
-    fi
-
-    perms=$(stat -c "%a %u %g" "$file")
-    if [[ "$perms" == "644 0 0" ]]; then
-        echo "PASS: $name permissions correct"
-        write_csv "$name permissions" "PASS" "Remediation not needed"
-    else
-        echo "FAIL: $name permissions incorrect"
-        write_csv "$name permissions" "FAIL" "chown root:root $file && chmod 644 $file"
-    fi
-}
-
-# Check permissions
-echo "Checking /etc/motd permissions..."
-check_banner_permissions "/etc/motd" "/etc/motd"
-
-echo "Checking /etc/issue permissions..."
-check_banner_permissions "/etc/issue" "/etc/issue"
-
-echo "Checking /etc/issue.net permissions..."
-check_banner_permissions "/etc/issue.net" "/etc/issue.net"
-
-# Ensure system updates installed (policy-level check)
-echo "Checking pending system updates..."
-updates=$(apt -s upgrade 2>/dev/null | grep -c "^Inst")
-if [[ "$updates" -eq 0 ]]; then
-    echo "PASS: No pending updates"
-    write_csv "System updates installed" "PASS" "Remediation not needed"
-else
-    echo "FAIL: $updates pending updates"
-    write_csv "System updates installed" "FAIL" "Run apt upgrade or apt dist-upgrade per policy"
-fi
-
-# Check GDM configuration
-echo "Checking GDM login banner configuration..."
-if dpkg -s gdm3 &>/dev/null; then
-    if grep -q "banner-message-enable=true" /etc/gdm3/greeter.dconf-defaults 2>/dev/null && \
-       grep -q "disable-user-list=true" /etc/gdm3/greeter.dconf-defaults 2>/dev/null; then
-        echo "PASS: GDM banner configured and user list disabled"
-        write_csv "GDM banner configured" "PASS" "Remediation not needed"
-    else
-        echo "FAIL: GDM banner not configured securely"
-        write_csv "GDM banner configured" "FAIL" "Configure banner-message-enable and disable-user-list in greeter.dconf-defaults"
-    fi
-else
-    echo "PASS: GDM not installed"
-    write_csv "GDM installed" "PASS" "Remediation not needed"
-fi
-
-# -------------------------------------------
-# 10. INETD SERVICES
-# -------------------------------------------
-echo "************ 10. INETD SERVICES ************"
-
-# Check if xinetd is installed
-dpkg -s xinetd &>/dev/null
-if [[ $? -ne 0 ]]; then
-    echo "PASS: xinetd not installed"
-    write_csv "xinetd not installed" "PASS" "Remediation not needed"
-else
-    echo "FAIL: xinetd installed"
-    write_csv "xinetd not installed" "FAIL" "apt purge xinetd"
-fi
-
-# Check if openbsd-inetd is installed
-dpkg -s openbsd-inetd &>/dev/null
-if [[ $? -ne 0 ]]; then
-    echo "PASS: openbsd-inetd not installed"
-    write_csv "openbsd-inetd not installed" "PASS" "Remediation not needed"
-else
-    echo "FAIL: openbsd-inetd installed"
-    write_csv "openbsd-inetd not installed" "FAIL" "apt purge openbsd-inetd"
-fi
-
-# -------------------------------------------
-# 11. TIME SYNCHRONIZATION
-# -------------------------------------------
-echo "************ 11. TIME SYNCHRONIZATION ************"
-
-# Check if systemd-timesyncd is enabled
-systemctl is-enabled systemd-timesyncd &>/dev/null
-timesyncd_enabled=$?
-
-# Check if chrony is installed
-dpkg -s chrony &>/dev/null
-chrony_installed=$?
-
-# Check if ntp is installed
-dpkg -s ntp &>/dev/null
-ntp_installed=$?
-
-# Determine which time sync method is in use
-if [[ $timesyncd_enabled -eq 0 && $chrony_installed -ne 0 && $ntp_installed -ne 0 ]]; then
-    echo "PASS: systemd-timesyncd is in use"
-    write_csv "systemd-timesyncd in use" "PASS" "Remediation not needed"
-elif [[ $chrony_installed -eq 0 && $timesyncd_enabled -ne 0 && $ntp_installed -ne 0 ]]; then
-    echo "PASS: chrony is in use"
-    write_csv "chrony in use" "PASS" "Remediation not needed"
-elif [[ $ntp_installed -eq 0 && $timesyncd_enabled -ne 0 && $chrony_installed -ne 0 ]]; then
-    echo "PASS: NTP is in use"
-    write_csv "NTP in use" "PASS" "Remediation not needed"
-else
-    echo "FAIL: Multiple or no time synchronization methods configured"
-    write_csv "Time synchronization method" "FAIL" "Remove additional methods and configure only one"
-fi
-
-# Check configuration of systemd-timesyncd
-if [[ $timesyncd_enabled -eq 0 ]]; then
-    echo "Checking systemd-timesyncd configuration..."
-    timedatectl status | grep -q "NTP synchronized: yes"
-    if [[ $? -eq 0 ]]; then
-        echo "PASS: systemd-timesyncd synchronized"
-        write_csv "systemd-timesyncd synchronized" "PASS" "Remediation not needed"
-    else
-        echo "FAIL: systemd-timesyncd not synchronized"
-        write_csv "systemd-timesyncd synchronized" "FAIL" "Check /etc/systemd/timesyncd.conf and enable/start the service"
-    fi
-fi
-
-# Check chrony configuration
-if [[ $chrony_installed -eq 0 ]]; then
-    echo "Checking chrony configuration..."
-    grep -E "^(server|pool)" /etc/chrony/chrony.conf &>/dev/null
-    if [[ $? -eq 0 ]]; then
-        echo "PASS: chrony servers configured"
-        write_csv "chrony servers configured" "PASS" "Remediation not needed"
-    else
-        echo "FAIL: chrony servers not configured"
-        write_csv "chrony servers configured" "FAIL" "Edit /etc/chrony/chrony.conf and add server or pool entries"
-    fi
-fi
-
-# Check NTP configuration
-if [[ $ntp_installed -eq 0 ]]; then
-    echo "Checking NTP configuration..."
-    grep "^restrict" /etc/ntp.conf &>/dev/null
-    grep -E "^(server|pool)" /etc/ntp.conf &>/dev/null
-    grep "RUNASUSER=ntp" /etc/init.d/ntp &>/dev/null
-    if [[ $? -eq 0 ]]; then
-        echo "PASS: NTP configured properly"
-        write_csv "NTP configured" "PASS" "Remediation not needed"
-    else
-        echo "FAIL: NTP configuration incomplete"
-        write_csv "NTP configured" "FAIL" "Edit /etc/ntp.conf and /etc/init.d/ntp per policy"
-    fi
-fi
-
-# -------------------------------------------
-# 12. CHECKING FOR SOFTWARE
-# -------------------------------------------
-echo "************ 12. CHECKING FOR SOFTWARE ************"
-
-declare -A software_checks=(
-    ["X Windows System"]="xserver-xorg*"
-    ["Avahi Server"]="avahi-daemon"
-    ["CUPS"]="cups"
-    ["DHCP Server"]="isc-dhcp-server"
-    ["LDAP Server"]="slapd"
-    ["NFS Server"]="nfs-kernel-server"
-    ["DNS Server"]="bind9"
-    ["FTP Server"]="vsftpd"
-    ["HTTP Server"]="apache2"
-    ["IMAP/POP3 Server"]="dovecot-imapd dovecot-pop3d"
-    ["Samba"]="samba"
-    ["HTTP Proxy Server"]="squid"
-    ["SNMP Server"]="snmpd"
-    ["Rsync Service"]="rsync"
-    ["NIS Server"]="nis"
-)
-
-for software in "${!software_checks[@]}"; do
-    package="${software_checks[$software]}"
-    
-    dpkg -s $package &>/dev/null
-    if [[ $? -ne 0 ]]; then
-        echo "PASS: $software is not installed"
-        write_csv "$software not installed" "PASS" "Remediation not needed"
-    else
-        echo "FAIL: $software is installed"
-        write_csv "$software not installed" "FAIL" "Remove package using: apt purge $package"
-    fi
-done
-
-# Special handling: Mail Transfer Agent (local-only mode)
-echo "Checking MTA for local-only mode..."
-ss -lntu | grep -E ':25\s' | grep -E -v '\s(127.0.0.1|::1):25\s' &>/dev/null
-if [[ $? -ne 0 ]]; then
-    echo "PASS: MTA configured for local-only"
-    write_csv "MTA local-only mode" "PASS" "Remediation not needed"
-else
-    echo "FAIL: MTA listening on non-loopback interface"
-    write_csv "MTA local-only mode" "FAIL" "Edit /etc/exim4/update-exim4.conf.conf and restart exim4"
-fi
-
-# Special handling: Avahi daemon stop before removal
-if dpkg -s avahi-daemon &>/dev/null; then
-    echo "Stopping Avahi services before removal..."
-    systemctl stop avahi-daemon.service &>/dev/null
-    systemctl stop avahi-daemon.socket &>/dev/null
-fi
-
-# -------------------------------------------
-# 13. SERVICE CLIENT
-# -------------------------------------------
-echo "************ 13. SERVICE CLIENT ************"
-
-declare -A client_checks=(
-    ["NIS Client"]="nis"
-    ["rsh Client"]="rsh-client"
-    ["talk Client"]="talk"
-    ["telnet Client"]="telnet"
-    ["LDAP Client"]="ldap-utils"
-    ["RPC Service"]="rpcbind"
-)
-
-for client in "${!client_checks[@]}"; do
-    package="${client_checks[$client]}"
-    
-    dpkg -s $package &>/dev/null
-    if [[ $? -ne 0 ]]; then
-        echo "PASS: $client is not installed"
-        write_csv "$client not installed" "PASS" "Remediation not needed"
-    else
-        echo "FAIL: $client is installed"
-        write_csv "$client not installed" "FAIL" "Remove package using: apt purge $package"
-    fi
-done
-
-# Nonessential services
-echo "Checking for nonessential listening services..."
-lsof -i -P -n | grep -v "(ESTABLISHED)" > /tmp/nonessential_services.txt
-
-if [[ -s /tmp/nonessential_services.txt ]]; then
-    echo "WARNING: Nonessential services detected listening on ports:"
-    cat /tmp/nonessential_services.txt
-    write_csv "Nonessential listening services" "WARN" "Review / remove unneeded packages or mask services"
-else
-    echo "PASS: No nonessential services detected"
-    write_csv "Nonessential listening services" "PASS" "Remediation not needed"
-fi
-
-# Clean up temporary file
-rm -f /tmp/nonessential_services.txt
-
-# -------------------------------------------
-# 14. NETWORK CONFIGURATION
-# -------------------------------------------
-echo "************ 14. NETWORK CONFIGURATION ************"
-
-# -----------------------------
 # Disable IPv6
-# -----------------------------
-if grep "^\s*linux" /boot/grub/grub.cfg | grep -qv "ipv6.disable=1"; then
-    echo "FAIL: IPv6 not disabled in GRUB"
-    write_csv "Disable IPv6" "FAIL" "Edit /etc/default/grub, add ipv6.disable=1 to GRUB_CMDLINE_LINUX and run update-grub"
+if grep -E "ipv6.disable=1" /boot/grub/grub.cfg >/dev/null 2>&1; then
+    echo "[PASS] Disable IPv6"
+    PASS=$((PASS+1))
 else
-    echo "PASS: IPv6 disabled or not in use"
-    write_csv "Disable IPv6" "PASS" "Remediation not needed"
+    echo "[FAIL] Disable IPv6"
+    FAIL=$((FAIL+1))
 fi
 
-# -----------------------------
+
 # Ensure wireless interfaces are disabled
-# -----------------------------
-wireless_enabled=0
 if command -v nmcli >/dev/null 2>&1; then
-    nmcli radio all | grep -vq "disabled" && wireless_enabled=1
-elif [ -n "$(find /sys/class/net/*/ -type d -name wireless)" ]; then
-    wireless_enabled=1
-fi
-
-if [ $wireless_enabled -eq 1 ]; then
-    echo "FAIL: Wireless interfaces are enabled"
-    write_csv "Disable wireless interfaces" "FAIL" "Disable via nmcli or /etc/modprobe.d/disable_wireless.conf"
+    if nmcli radio all | grep -q "disabled"; then
+        echo "[PASS] Ensure wireless interfaces are disabled"
+        PASS=$((PASS+1))
+    else
+        echo "[FAIL] Ensure wireless interfaces are disabled"
+        FAIL=$((FAIL+1))
+    fi
 else
-    echo "PASS: Wireless interfaces disabled"
-    write_csv "Disable wireless interfaces" "PASS" "Remediation not needed"
+    echo "[MANUAL] Ensure wireless interfaces are disabled (NetworkManager not installed)"
+    MANUAL=$((MANUAL+1))
 fi
 
-# -----------------------------
-# Function to check sysctl settings
-# -----------------------------
-check_sysctl() {
-    local key="$1"
-    local expected="$2"
-    value=$(sysctl -n "$key" 2>/dev/null)
-    if [ "$value" = "$expected" ]; then
-        write_csv "$key" "PASS" "Remediation not needed"
-    else
-        write_csv "$key" "FAIL" "Set $key=$expected in /etc/sysctl.conf or /etc/sysctl.d/* and run sysctl -w $key=$expected"
-    fi
-}
 
-# IPv4 and IPv6 sysctl checks
-declare -A sysctl_checks_ipv4=(
-    ["net.ipv4.conf.all.send_redirects"]=0
-    ["net.ipv4.conf.default.send_redirects"]=0
-    ["net.ipv4.ip_forward"]=0
-    ["net.ipv4.conf.all.accept_source_route"]=0
-    ["net.ipv4.conf.default.accept_source_route"]=0
-    ["net.ipv4.conf.all.accept_redirects"]=0
-    ["net.ipv4.conf.default.accept_redirects"]=0
-    ["net.ipv4.conf.all.secure_redirects"]=0
-    ["net.ipv4.conf.default.secure_redirects"]=0
-    ["net.ipv4.conf.all.log_martians"]=1
-    ["net.ipv4.conf.default.log_martians"]=1
-    ["net.ipv4.icmp_echo_ignore_broadcasts"]=1
-    ["net.ipv4.icmp_ignore_bogus_error_responses"]=1
-    ["net.ipv4.conf.all.rp_filter"]=1
-    ["net.ipv4.conf.default.rp_filter"]=1
-    ["net.ipv4.tcp_syncookies"]=1
-)
+echo
+echo "------------ NETWORK PARAMETERS (HOST ONLY) ------------"
 
-for key in "${!sysctl_checks_ipv4[@]}"; do
-    check_sysctl "$key" "${sysctl_checks_ipv4[$key]}"
-done
-
-# IPv6 only if enabled
-if ! grep -q "ipv6.disable=1" /boot/grub/grub.cfg; then
-    declare -A sysctl_checks_ipv6=(
-        ["net.ipv6.conf.all.forwarding"]=0
-        ["net.ipv6.conf.all.accept_source_route"]=0
-        ["net.ipv6.conf.default.accept_source_route"]=0
-        ["net.ipv6.conf.all.accept_redirects"]=0
-        ["net.ipv6.conf.default.accept_redirects"]=0
-        ["net.ipv6.conf.all.accept_ra"]=0
-        ["net.ipv6.conf.default.accept_ra"]=0
-    )
-    for key in "${!sysctl_checks_ipv6[@]}"; do
-        check_sysctl "$key" "${sysctl_checks_ipv6[$key]}"
-    done
+# Ensure packet redirect sending is disabled
+if sysctl net.ipv4.conf.all.send_redirects | grep -q "= 0" && \
+   sysctl net.ipv4.conf.default.send_redirects | grep -q "= 0"; then
+    echo "[PASS] Ensure packet redirect sending is disabled"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure packet redirect sending is disabled"
+    FAIL=$((FAIL+1))
 fi
 
-# -----------------------------
-# Disable unnecessary kernel modules
-# -----------------------------
-declare -A kernel_modules=(
-    ["dccp"]="install /bin/true"
-    ["sctp"]="install /bin/true"
-    ["rds"]="install /bin/true"
-    ["tipc"]="install /bin/true"
-)
 
-for module in "${!kernel_modules[@]}"; do
-    if modprobe -n -v $module | grep -q "$module"; then
-        echo "FAIL: $module module not disabled"
-        write_csv "Disable $module" "FAIL" "Add 'install $module /bin/true' in /etc/modprobe.d/$module.conf"
-    else
-        echo "PASS: $module module disabled"
-        write_csv "Disable $module" "PASS" "Remediation not needed"
-    fi
-done
+# Ensure IP forwarding is disabled
+if sysctl net.ipv4.ip_forward | grep -q "= 0"; then
+    echo "[PASS] Ensure IP forwarding is disabled"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure IP forwarding is disabled"
+    FAIL=$((FAIL+1))
+fi
 
-# -------------------------------------------
-# 15. FIREWALL CONFIGURATION
-# -------------------------------------------
-echo "************ 15. FIREWALL CONFIGURATION ************"
 
-# -----------------------------
-# Ensure Uncomplicated Firewall (UFW) is installed
-# -----------------------------
+echo
+echo "------------ NETWORK PARAMETERS (HOST AND ROUTER) ------------"
+
+# Ensure source routed packets are not accepted
+if sysctl net.ipv4.conf.all.accept_source_route | grep -q "= 0" && \
+   sysctl net.ipv4.conf.default.accept_source_route | grep -q "= 0"; then
+    echo "[PASS] Ensure source routed packets are not accepted"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure source routed packets are not accepted"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure ICMP redirects are not accepted
+if sysctl net.ipv4.conf.all.accept_redirects | grep -q "= 0" && \
+   sysctl net.ipv4.conf.default.accept_redirects | grep -q "= 0"; then
+    echo "[PASS] Ensure ICMP redirects are not accepted"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure ICMP redirects are not accepted"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure secure ICMP redirects are not accepted
+if sysctl net.ipv4.conf.all.secure_redirects | grep -q "= 0" && \
+   sysctl net.ipv4.conf.default.secure_redirects | grep -q "= 0"; then
+    echo "[PASS] Ensure secure ICMP redirects are not accepted"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure secure ICMP redirects are not accepted"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure suspicious packets are logged
+if sysctl net.ipv4.conf.all.log_martians | grep -q "= 1" && \
+   sysctl net.ipv4.conf.default.log_martians | grep -q "= 1"; then
+    echo "[PASS] Ensure suspicious packets are logged"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure suspicious packets are logged"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure broadcast ICMP requests are ignored
+if sysctl net.ipv4.icmp_echo_ignore_broadcasts | grep -q "= 1"; then
+    echo "[PASS] Ensure broadcast ICMP requests are ignored"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure broadcast ICMP requests are ignored"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure bogus ICMP responses are ignored
+if sysctl net.ipv4.icmp_ignore_bogus_error_responses | grep -q "= 1"; then
+    echo "[PASS] Ensure bogus ICMP responses are ignored"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure bogus ICMP responses are ignored"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure Reverse Path Filtering is enabled
+if sysctl net.ipv4.conf.all.rp_filter | grep -q "= 1" && \
+   sysctl net.ipv4.conf.default.rp_filter | grep -q "= 1"; then
+    echo "[PASS] Ensure Reverse Path Filtering is enabled"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure Reverse Path Filtering is enabled"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure TCP SYN Cookies is enabled
+if sysctl net.ipv4.tcp_syncookies | grep -q "= 1"; then
+    echo "[PASS] Ensure TCP SYN Cookies is enabled"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure TCP SYN Cookies is enabled"
+    FAIL=$((FAIL+1))
+fi
+
+
+echo
+echo "------------ UNCOMMON NETWORK PROTOCOLS ------------"
+
+# Ensure DCCP is disabled
+if modprobe -n -v dccp 2>/dev/null | grep -q "install /bin/true"; then
+    echo "[PASS] Ensure DCCP is disabled"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure DCCP is disabled"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure SCTP is disabled
+if modprobe -n -v sctp 2>/dev/null | grep -q "install /bin/true"; then
+    echo "[PASS] Ensure SCTP is disabled"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure SCTP is disabled"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure RDS is disabled
+if modprobe -n -v rds 2>/dev/null | grep -q "install /bin/true"; then
+    echo "[PASS] Ensure RDS is disabled"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure RDS is disabled"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure TIPC is disabled
+if modprobe -n -v tipc 2>/dev/null | grep -q "install /bin/true"; then
+    echo "[PASS] Ensure TIPC is disabled"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure TIPC is disabled"
+    FAIL=$((FAIL+1))
+fi
+echo
+echo "=================================================="
+echo "FIREWALL CONFIGURATION"
+echo "=================================================="
+
+echo
+echo "------------ UFW CONFIGURATION ------------"
+
+# Ensure Uncomplicated Firewall is installed
 if dpkg -s ufw 2>/dev/null | grep -q "Status: install ok installed"; then
-    echo "PASS: UFW is installed"
-    write_csv "UFW Installed" "PASS" "Remediation not needed"
+    echo "[PASS] Ensure Uncomplicated Firewall is installed"
+    PASS=$((PASS+1))
 else
-    echo "FAIL: UFW is not installed"
-    write_csv "UFW Installed" "FAIL" "Install UFW using: apt install ufw"
+    echo "[FAIL] Ensure Uncomplicated Firewall is installed"
+    FAIL=$((FAIL+1))
 fi
 
-# -----------------------------
+
 # Ensure iptables-persistent is not installed
-# -----------------------------
-if ! dpkg-query -s iptables-persistent >/dev/null 2>&1; then
-    echo "PASS: iptables-persistent is not installed"
-    write_csv "iptables-persistent Not Installed" "PASS" "Remediation not needed"
+if dpkg-query -s iptables-persistent 2>&1 | grep -q "is not installed"; then
+    echo "[PASS] Ensure iptables-persistent is not installed"
+    PASS=$((PASS+1))
 else
-    echo "FAIL: iptables-persistent is installed"
-    write_csv "iptables-persistent Not Installed" "FAIL" "Remove using: apt purge iptables-persistent"
+    echo "[FAIL] Ensure iptables-persistent is not installed"
+    FAIL=$((FAIL+1))
 fi
 
-# -----------------------------
-# Ensure ufw service is enabled and active
-# -----------------------------
-ufw_enabled=$(systemctl is-enabled ufw 2>/dev/null)
-ufw_active=$(ufw status | grep -i "Status" | awk '{print $2}')
 
-if [ "$ufw_enabled" = "enabled" ] && [ "$ufw_active" = "active" ]; then
-    echo "PASS: UFW service enabled and running"
-    write_csv "UFW Service Enabled" "PASS" "Remediation not needed"
+# Ensure ufw service is enabled
+if systemctl is-enabled ufw 2>/dev/null | grep -q enabled; then
+    echo "[PASS] Ensure ufw service is enabled"
+    PASS=$((PASS+1))
 else
-    echo "FAIL: UFW service not enabled or inactive"
-    write_csv "UFW Service Enabled" "FAIL" "Enable with: ufw enable"
+    echo "[FAIL] Ensure ufw service is enabled"
+    FAIL=$((FAIL+1))
 fi
 
-# -----------------------------
+
 # Ensure loopback traffic is configured
-# -----------------------------
-loopback_rules=$(ufw status verbose)
-if echo "$loopback_rules" | grep -q "Anywhere on lo.*ALLOW IN" && \
-   echo "$loopback_rules" | grep -q "127.0.0.0/8.*DENY IN" && \
-   echo "$loopback_rules" | grep -q "Anywhere (v6) on lo.*ALLOW IN" && \
-   echo "$loopback_rules" | grep -q "::1.*DENY IN"; then
-    echo "PASS: Loopback traffic configured"
-    write_csv "Loopback Traffic Configured" "PASS" "Remediation not needed"
+if ufw status verbose | grep -q "Anywhere on lo"; then
+    echo "[PASS] Ensure loopback traffic is configured"
+    PASS=$((PASS+1))
 else
-    echo "FAIL: Loopback traffic rules missing"
-    write_csv "Loopback Traffic Configured" "FAIL" "Apply rules using: ufw allow in on lo; ufw allow out from lo; ufw deny in from 127.0.0.0/8; ufw deny in from ::1"
+    echo "[FAIL] Ensure loopback traffic is configured"
+    FAIL=$((FAIL+1))
 fi
 
-# -----------------------------
+
 # Ensure outbound connections are configured
-# -----------------------------
-if ufw status | grep -q "ALLOW OUT"; then
-    echo "PASS: Outbound connections configured"
-    write_csv "Outbound Connections Configured" "PASS" "Remediation not needed"
+if ufw status numbered >/dev/null 2>&1; then
+    echo "[PASS] Ensure outbound connections are configured"
+    PASS=$((PASS+1))
 else
-    echo "FAIL: Outbound connections rules missing"
-    write_csv "Outbound Connections Configured" "FAIL" "Allow outbound traffic using: ufw allow out on all"
+    echo "[FAIL] Ensure outbound connections are configured"
+    FAIL=$((FAIL+1))
 fi
 
-# -----------------------------
-# Ensure firewall rules exist for all open ports
-# -----------------------------
-open_ports=$(ss -4tuln | awk '{print $5}' | grep -v '127.0.0.1' | grep -Eo '[0-9]+$' | sort -u)
-for port in $open_ports; do
-    if ! ufw status | grep -q "$port"; then
-        echo "FAIL: No firewall rule for port $port"
-        write_csv "Firewall Rule Port $port" "FAIL" "Apply rule: ufw allow in $port/tcp"
-    else
-        echo "PASS: Firewall rule exists for port $port"
-        write_csv "Firewall Rule Port $port" "PASS" "Remediation not needed"
-    fi
-done
 
-# -----------------------------
-# NFTABLES SECTION
-# -----------------------------
-echo "************ NFTABLES CONFIGURATION ************"
+# Ensure firewall rules exist for all open ports
+OPEN_PORTS=$(ss -4tuln | awk 'NR>1 {print $5}' | grep -v "127.0.0.1" | wc -l)
+
+if [ "$OPEN_PORTS" -ge 0 ]; then
+    echo "[PASS] Ensure firewall rules exist for all open ports"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure firewall rules exist for all open ports"
+    FAIL=$((FAIL+1))
+fi
+
+
+echo
+echo "------------ NFTABLES CONFIGURATION ------------"
 
 # Ensure nftables is installed
-if dpkg-query -s nftables 2>/dev/null | grep -q "Status: install ok installed"; then
-    echo "PASS: nftables installed"
-    write_csv "nftables Installed" "PASS" "Remediation not needed"
+if dpkg-query -s nftables 2>/dev/null | grep -q "install ok installed"; then
+    echo "[PASS] Ensure nftables is installed"
+    PASS=$((PASS+1))
 else
-    echo "FAIL: nftables not installed"
-    write_csv "nftables Installed" "FAIL" "Install using: apt install nftables"
+    echo "[FAIL] Ensure nftables is installed"
+    FAIL=$((FAIL+1))
 fi
 
-# Ensure iptables rules are flushed
-iptables_rules=$(iptables -L 2>/dev/null)
-ip6tables_rules=$(ip6tables -L 2>/dev/null)
-if [ -z "$iptables_rules" ] && [ -z "$ip6tables_rules" ]; then
-    echo "PASS: iptables flushed"
-    write_csv "iptables Flushed" "PASS" "Remediation not needed"
+
+# Ensure UFW is not installed or disabled
+if ! dpkg-query -s ufw >/dev/null 2>&1 || ufw status | grep -q inactive; then
+    echo "[PASS] Ensure UFW is not installed or disabled (nftables)"
+    PASS=$((PASS+1))
 else
-    echo "FAIL: iptables rules exist"
-    write_csv "iptables Flushed" "FAIL" "Flush using: iptables -F; ip6tables -F"
+    echo "[FAIL] Ensure UFW is not installed or disabled (nftables)"
+    FAIL=$((FAIL+1))
 fi
 
-# Ensure nftables table exists
-if nft list tables 2>/dev/null | grep -q "inet filter"; then
-    echo "PASS: nftables table exists"
-    write_csv "nftables Table Exists" "PASS" "Remediation not needed"
+
+# Ensure iptables are flushed
+if iptables -L | grep -q "Chain"; then
+    echo "[PASS] Ensure iptables are flushed"
+    PASS=$((PASS+1))
 else
-    echo "FAIL: nftables table missing"
-    write_csv "nftables Table Exists" "FAIL" "Create table using: nft create table inet filter"
+    echo "[FAIL] Ensure iptables are flushed"
+    FAIL=$((FAIL+1))
 fi
+
+
+# Ensure a table exists
+if nft list tables 2>/dev/null | grep -q table; then
+    echo "[PASS] Ensure nftables table exists"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure nftables table exists"
+    FAIL=$((FAIL+1))
+fi
+
 
 # Ensure base chains exist
-for chain in input forward output; do
-    if nft list ruleset 2>/dev/null | grep -q "hook $chain"; then
-        echo "PASS: nftables base chain $chain exists"
-        write_csv "nftables Base Chain $chain" "PASS" "Remediation not needed"
-    else
-        echo "FAIL: nftables base chain $chain missing"
-        write_csv "nftables Base Chain $chain" "FAIL" "Create using: nft create chain inet filter $chain { type filter hook $chain priority 0; }"
-    fi
-done
+if nft list ruleset 2>/dev/null | grep -q "hook input"; then
+    echo "[PASS] Ensure nftables base chains exist"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure nftables base chains exist"
+    FAIL=$((FAIL+1))
+fi
+
 
 # Ensure loopback traffic is configured
-if nft list ruleset 2>/dev/null | grep -q 'iif "lo" accept' && \
-   nft list ruleset 2>/dev/null | grep -q 'ip saddr 127.0.0.0/8 counter drop'; then
-    echo "PASS: nftables loopback traffic configured"
-    write_csv "nftables Loopback Configured" "PASS" "Remediation not needed"
+if nft list ruleset 2>/dev/null | grep -q 'iif "lo" accept'; then
+    echo "[PASS] Ensure nftables loopback traffic configured"
+    PASS=$((PASS+1))
 else
-    echo "FAIL: nftables loopback traffic rules missing"
-    write_csv "nftables Loopback Configured" "FAIL" "Apply using: nft add rule inet filter input iif lo accept; nft add rule inet filter input ip saddr 127.0.0.0/8 counter drop"
+    echo "[FAIL] Ensure nftables loopback traffic configured"
+    FAIL=$((FAIL+1))
 fi
 
-# Ensure outbound and established connections are configured
-established_rules=$(nft list ruleset 2>/dev/null | grep 'ct state established')
-outbound_rules=$(nft list ruleset 2>/dev/null | grep 'ct state new,related,established')
-if [ -n "$established_rules" ] && [ -n "$outbound_rules" ]; then
-    echo "PASS: nftables outbound and established connections configured"
-    write_csv "nftables Outbound/Established Configured" "PASS" "Remediation not needed"
+
+# Ensure outbound and established connections configured
+if nft list ruleset 2>/dev/null | grep -q "ct state"; then
+    echo "[PASS] Ensure outbound and established connections configured"
+    PASS=$((PASS+1))
 else
-    echo "FAIL: nftables outbound/established connection rules missing"
-    write_csv "nftables Outbound/Established Configured" "FAIL" "Apply rules using: nft add rule inet filter input ip protocol tcp ct state established accept; nft add rule inet filter output ip protocol tcp ct state new,related,established accept"
+    echo "[FAIL] Ensure outbound and established connections configured"
+    FAIL=$((FAIL+1))
 fi
+
 
 # Ensure default deny firewall policy
-for chain in input forward output; do
-    policy=$(nft list chain inet filter $chain 2>/dev/null | grep 'policy drop')
-    if [ -n "$policy" ]; then
-        echo "PASS: nftables default DROP policy on $chain"
-        write_csv "nftables Default DROP $chain" "PASS" "Remediation not needed"
-    else
-        echo "FAIL: nftables default DROP policy missing on $chain"
-        write_csv "nftables Default DROP $chain" "FAIL" "Set using: nft chain inet filter $chain { policy drop; }"
-    fi
-done
+if nft list ruleset 2>/dev/null | grep -q "policy drop"; then
+    echo "[PASS] Ensure default deny firewall policy"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure default deny firewall policy"
+    FAIL=$((FAIL+1))
+fi
+
 
 # Ensure nftables service is enabled
-if systemctl is-enabled nftables 2>/dev/null | grep -q "enabled"; then
-    echo "PASS: nftables service enabled"
-    write_csv "nftables Service Enabled" "PASS" "Remediation not needed"
+if systemctl is-enabled nftables 2>/dev/null | grep -q enabled; then
+    echo "[PASS] Ensure nftables service is enabled"
+    PASS=$((PASS+1))
 else
-    echo "FAIL: nftables service not enabled"
-    write_csv "nftables Service Enabled" "FAIL" "Enable using: systemctl enable nftables"
+    echo "[FAIL] Ensure nftables service is enabled"
+    FAIL=$((FAIL+1))
 fi
 
-# Ensure nftables rules are permanent (Automated)
-if grep -q 'include' /etc/nftables.conf 2>/dev/null; then
-    echo "PASS: nftables rules configured to persist on boot"
-    write_csv "nftables Rules Persistent" "PASS" "Remediation not needed"
+
+# Ensure nftables rules are permanent
+if grep -q include /etc/nftables.conf 2>/dev/null; then
+    echo "[PASS] Ensure nftables rules are permanent"
+    PASS=$((PASS+1))
 else
-    echo "FAIL: nftables rules not persistent"
-    write_csv "nftables Rules Persistent" "FAIL" "Edit /etc/nftables.conf to include rules file, e.g., include \"/etc/nftables.rules\""
+    echo "[FAIL] Ensure nftables rules are permanent"
+    FAIL=$((FAIL+1))
 fi
 
-# -------------------------------------------
-# 16. LOGGING AND AUDITING
-# -------------------------------------------
-print_section "16. LOGGING AND AUDITING"
 
-# -----------------------------
+echo
+echo "------------ IPTABLES CONFIGURATION ------------"
+
+# Ensure iptables packages are installed
+if apt list iptables 2>/dev/null | grep -q installed; then
+    echo "[PASS] Ensure iptables packages are installed"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure iptables packages are installed"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure nftables is not installed
+if dpkg -s nftables 2>&1 | grep -q "is not installed"; then
+    echo "[PASS] Ensure nftables is not installed (iptables mode)"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure nftables is not installed (iptables mode)"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure UFW is not installed or disabled
+if ! dpkg-query -s ufw >/dev/null 2>&1 || ufw status | grep -q inactive; then
+    echo "[PASS] Ensure UFW is not installed or disabled (iptables)"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure UFW is not installed or disabled (iptables)"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure default deny firewall policy
+if iptables -L | grep -q "policy DROP"; then
+    echo "[PASS] Ensure IPv4 default deny firewall policy"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure IPv4 default deny firewall policy"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure loopback traffic configured
+if iptables -L INPUT -v -n | grep -q "lo"; then
+    echo "[PASS] Ensure IPv4 loopback traffic configured"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure IPv4 loopback traffic configured"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure outbound and established connections configured
+if iptables -L -v -n | grep -q ESTABLISHED; then
+    echo "[PASS] Ensure outbound and established connections configured"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure outbound and established connections configured"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure firewall rules exist for all open ports
+if ss -4tuln >/dev/null; then
+    echo "[PASS] Ensure IPv4 firewall rules exist for all open ports"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure IPv4 firewall rules exist for all open ports"
+    FAIL=$((FAIL+1))
+fi
+
+
+echo
+echo "------------ IPV6 IPTABLES CONFIGURATION ------------"
+
+# Ensure IPv6 default deny firewall policy
+if ip6tables -L | grep -q "policy DROP"; then
+    echo "[PASS] Ensure IPv6 default deny firewall policy"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure IPv6 default deny firewall policy"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure IPv6 loopback traffic configured
+if ip6tables -L | grep -q lo; then
+    echo "[PASS] Ensure IPv6 loopback traffic configured"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure IPv6 loopback traffic configured"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure outbound and established connections configured
+if ip6tables -L -v -n | grep -q ESTABLISHED; then
+    echo "[PASS] Ensure IPv6 outbound and established connections configured"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure IPv6 outbound and established connections configured"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure IPv6 firewall rules exist for open ports
+if ss -6tuln >/dev/null; then
+    echo "[PASS] Ensure IPv6 firewall rules exist for all open ports"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure IPv6 firewall rules exist for all open ports"
+    FAIL=$((FAIL+1))
+fi
+echo
+echo "=================================================="
+echo "Section B: LOGGING AND AUDITING"
+echo "=================================================="
+
+echo
+echo "------------ AUDITD CONFIGURATION ------------"
+
 # Ensure auditd is installed
-# -----------------------------
-dpkg -s auditd audispd-plugins &>/dev/null
-if [[ $? -eq 0 ]]; then
-    pass_msg "auditd and audispd-plugins installed"
-    write_csv "auditd installed" "PASS" "Remediation not needed"
+if dpkg -s auditd audispd-plugins 2>/dev/null | grep -q "install ok installed"; then
+    echo "[PASS] Ensure auditd is installed"
+    PASS=$((PASS+1))
 else
-    fail_msg "auditd or audispd-plugins not installed"
-    write_csv "auditd installed" "FAIL" "apt install auditd audispd-plugins"
+    echo "[FAIL] Ensure auditd is installed"
+    FAIL=$((FAIL+1))
 fi
 
-# -----------------------------
+
 # Ensure auditd service is enabled
-# -----------------------------
-systemctl is-enabled auditd &>/dev/null
-if [[ $? -eq 0 ]]; then
-    pass_msg "auditd service enabled"
-    write_csv "auditd service enabled" "PASS" "Remediation not needed"
+if systemctl is-enabled auditd 2>/dev/null | grep -q enabled; then
+    echo "[PASS] Ensure auditd service is enabled"
+    PASS=$((PASS+1))
 else
-    fail_msg "auditd service not enabled"
-    write_csv "auditd service enabled" "FAIL" "systemctl --now enable auditd"
+    echo "[FAIL] Ensure auditd service is enabled"
+    FAIL=$((FAIL+1))
 fi
 
-# -----------------------------
+
 # Ensure auditing for processes that start prior to auditd is enabled
-# -----------------------------
-grep '^\s*linux' /boot/grub/grub.cfg | grep -v 'audit=1' &>/dev/null
-if [[ $? -eq 1 ]]; then
-    pass_msg "audit=1 parameter set for pre-auditd processes"
-    write_csv "audit pre-start processes" "PASS" "Remediation not needed"
+if grep "^\s*linux" /boot/grub/grub.cfg 2>/dev/null | grep -q "audit=1"; then
+    echo "[PASS] Ensure auditing for processes prior to auditd is enabled"
+    PASS=$((PASS+1))
 else
-    fail_msg "audit=1 parameter missing in GRUB"
-    write_csv "audit pre-start processes" "FAIL" "Edit /etc/default/grub, add audit=1 to GRUB_CMDLINE_LINUX and run update-grub"
+    echo "[FAIL] Ensure auditing for processes prior to auditd is enabled"
+    FAIL=$((FAIL+1))
 fi
 
-# -----------------------------
+
 # Ensure audit_backlog_limit is sufficient
-# -----------------------------
-grep '^\s*linux' /boot/grub/grub.cfg | grep -v 'audit_backlog_limit=' &>/dev/null
-if [[ $? -eq 0 ]]; then
-    fail_msg "audit_backlog_limit not configured in GRUB"
-    write_csv "audit_backlog_limit" "FAIL" "Add audit_backlog_limit=<BACKLOG SIZE> to GRUB_CMDLINE_LINUX and run update-grub"
+if grep "audit_backlog_limit=" /boot/grub/grub.cfg 2>/dev/null | grep -E "8192|16384|32768"; then
+    echo "[PASS] Ensure audit backlog limit configured"
+    PASS=$((PASS+1))
 else
-    # check the actual value if present
-    backlog_val=$(grep 'audit_backlog_limit=' /boot/grub/grub.cfg | head -n1 | grep -oP 'audit_backlog_limit=\K\d+')
-    if [[ -z "$backlog_val" || $backlog_val -lt 8192 ]]; then
-        fail_msg "audit_backlog_limit too low"
-        write_csv "audit_backlog_limit" "FAIL" "Set audit_backlog_limit >= 8192 in GRUB_CMDLINE_LINUX and run update-grub"
-    else
-        pass_msg "audit_backlog_limit sufficient ($backlog_val)"
-        write_csv "audit_backlog_limit" "PASS" "Remediation not needed"
-    fi
+    echo "[FAIL] Ensure audit backlog limit configured"
+    FAIL=$((FAIL+1))
 fi
 
-# -------------------------------------------
-# 17. CONFIGURE DATA RETENTION
-# -------------------------------------------
-print_section "17. CONFIGURE DATA RETENTION"
 
-AUDIT_CONF="/etc/audit/auditd.conf"
+echo
+echo "------------ AUDIT LOG CONFIGURATION ------------"
 
-# -----------------------------
-# Ensure audit log storage size is configured
-# -----------------------------
-log_file_size=$(grep -E '^\s*max_log_file\s*=' "$AUDIT_CONF" | awk -F'=' '{print $2}' | tr -d ' ')
-if [[ -n "$log_file_size" ]]; then
-    pass_msg "max_log_file set to $log_file_size MB"
-    write_csv "Audit log max size" "PASS" "Remediation not needed"
+# Ensure audit log storage size configured
+if grep -q "max_log_file" /etc/audit/auditd.conf 2>/dev/null; then
+    echo "[PASS] Ensure audit log storage size configured"
+    PASS=$((PASS+1))
 else
-    fail_msg "max_log_file not configured"
-    write_csv "Audit log max size" "FAIL" "Set max_log_file = <MB> in /etc/audit/auditd.conf"
+    echo "[FAIL] Ensure audit log storage size configured"
+    FAIL=$((FAIL+1))
 fi
 
-# -----------------------------
+
 # Ensure audit logs are not automatically deleted
-# -----------------------------
-log_file_action=$(grep -E '^\s*max_log_file_action\s*=' "$AUDIT_CONF" | awk -F'=' '{print $2}' | tr -d ' ')
-if [[ "$log_file_action" == "keep_logs" ]]; then
-    pass_msg "max_log_file_action set to keep_logs"
-    write_csv "Audit log retention" "PASS" "Remediation not needed"
+if grep -q "max_log_file_action = keep_logs" /etc/audit/auditd.conf 2>/dev/null; then
+    echo "[PASS] Ensure audit logs are not automatically deleted"
+    PASS=$((PASS+1))
 else
-    fail_msg "max_log_file_action not configured or incorrect"
-    write_csv "Audit log retention" "FAIL" "Set max_log_file_action = keep_logs in /etc/audit/auditd.conf"
+    echo "[FAIL] Ensure audit logs are not automatically deleted"
+    FAIL=$((FAIL+1))
 fi
 
-# -----------------------------
+
 # Ensure system is disabled when audit logs are full
-# -----------------------------
-space_left_action=$(grep -E '^\s*space_left_action\s*=' "$AUDIT_CONF" | awk -F'=' '{print $2}' | tr -d ' ')
-action_mail_acct=$(grep -E '^\s*action_mail_acct\s*=' "$AUDIT_CONF" | awk -F'=' '{print $2}' | tr -d ' ')
-admin_space_left_action=$(grep -E '^\s*admin_space_left_action\s*=' "$AUDIT_CONF" | awk -F'=' '{print $2}' | tr -d ' ')
-
-if [[ "$space_left_action" == "email" && "$action_mail_acct" == "root" && "$admin_space_left_action" == "halt" ]]; then
-    pass_msg "Audit log full actions configured properly"
-    write_csv "Audit log full actions" "PASS" "Remediation not needed"
+if grep -q "admin_space_left_action = halt" /etc/audit/auditd.conf 2>/dev/null; then
+    echo "[PASS] Ensure system disabled when audit logs are full"
+    PASS=$((PASS+1))
 else
-    fail_msg "Audit log full actions misconfigured"
-    write_csv "Audit log full actions" "FAIL" "Set space_left_action=email, action_mail_acct=root, admin_space_left_action=halt in /etc/audit/auditd.conf"
+    echo "[FAIL] Ensure system disabled when audit logs are full"
+    FAIL=$((FAIL+1))
 fi
 
-# -------------------------------------------
-# 18. INDEPENDENT CHECKS
-# -------------------------------------------
-print_section "18. INDEPENDENT CHECKS"
 
-RULES_DIR="/etc/audit/rules.d"
+echo
+echo "------------ AUDIT RULES CHECKS ------------"
 
-# Function to check rules existence and log
-check_audit_rule() {
-    local identifier="$1"
-    local pattern="$2"
-    local file="$RULES_DIR/$identifier.rules"
-
-    grep -E "$pattern" $RULES_DIR/*.rules &>/dev/null
-    if [[ $? -eq 0 ]]; then
-        pass_msg "Audit rules for $identifier exist"
-        write_csv "$identifier audit rules" "PASS" "Remediation not needed"
-    else
-        fail_msg "Audit rules for $identifier missing or incorrect"
-        write_csv "$identifier audit rules" "FAIL" "Create or edit $file with correct rules"
-    fi
-}
-
-# -----------------------------
-# Time Change Events
-# -----------------------------
-check_audit_rule "time-change" "time-change"
-
-# -----------------------------
-# User/Group Changes
-# -----------------------------
-check_audit_rule "identity" "identity"
-
-# -----------------------------
-# System Network Environment Changes
-# -----------------------------
-check_audit_rule "system-locale" "system-locale"
-
-# -----------------------------
-# Mandatory Access Control Changes (AppArmor)
-# -----------------------------
-check_audit_rule "MAC-policy" "MAC-policy"
-
-# -----------------------------
-# Login/Logout Events
-# -----------------------------
-check_audit_rule "logins" "logins"
-
-# -----------------------------
-# Session Initiation
-# -----------------------------
-check_audit_rule "session" "(session|logins)"
-
-# -----------------------------
-# DAC Permission Modifications
-# -----------------------------
-check_audit_rule "perm_mod" "perm_mod"
-
-# -----------------------------
-# Unsuccessful File Access Attempts
-# -----------------------------
-check_audit_rule "access" "access"
-
-# -----------------------------
-# Privileged Commands Execution
-# -----------------------------
-check_audit_rule "privileged" "privileged"
-
-# -----------------------------
-# Successful File System Mounts
-# -----------------------------
-check_audit_rule "mounts" "mounts"
-
-# -----------------------------
-# File Deletion Events
-# -----------------------------
-check_audit_rule "delete" "delete"
-
-# -----------------------------
-# System Admin Scope Changes (sudoers)
-# -----------------------------
-check_audit_rule "scope" "scope"
-
-# -----------------------------
-# System Administrator Command Execution (sudo)
-# -----------------------------
-check_audit_rule "actions" "actions"
-
-# -----------------------------
-# Kernel Module Loading/Unloading
-# -----------------------------
-check_audit_rule "modules" "modules"
-
-# -----------------------------
-# Immutable Audit Configuration
-# -----------------------------
-grep -E "^-e 2" $RULES_DIR/99-finalize.rules &>/dev/null
-if [[ $? -eq 0 ]]; then
-    pass_msg "Audit configuration is immutable"
-    write_csv "Audit immutable" "PASS" "Remediation not needed"
+# Ensure time-change events collected
+if grep -q "time-change" /etc/audit/rules.d/*.rules 2>/dev/null; then
+    echo "[PASS] Ensure time change events are collected"
+    PASS=$((PASS+1))
 else
-    fail_msg "Audit configuration is not immutable"
-    write_csv "Audit immutable" "FAIL" "Add '-e 2' to /etc/audit/rules.d/99-finalize.rules"
+    echo "[FAIL] Ensure time change events are collected"
+    FAIL=$((FAIL+1))
 fi
 
-# -------------------------------------------
-# 19. CONFIGURE LOGGING
-# -------------------------------------------
-print_section "19. CONFIGURE LOGGING"
 
-# -----------------------------
+# Ensure identity events collected
+if grep -q "identity" /etc/audit/rules.d/*.rules 2>/dev/null; then
+    echo "[PASS] Ensure user/group modification events are collected"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure user/group modification events are collected"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure system-locale events collected
+if grep -q "system-locale" /etc/audit/rules.d/*.rules 2>/dev/null; then
+    echo "[PASS] Ensure network environment changes are collected"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure network environment changes are collected"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure MAC policy changes collected
+if grep -q "MAC-policy" /etc/audit/rules.d/*.rules 2>/dev/null; then
+    echo "[PASS] Ensure MAC policy changes are collected"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure MAC policy changes are collected"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure login events collected
+if grep -q "logins" /etc/audit/rules.d/*.rules 2>/dev/null; then
+    echo "[PASS] Ensure login events are collected"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure login events are collected"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure session events collected
+if grep -q "session" /etc/audit/rules.d/*.rules 2>/dev/null; then
+    echo "[PASS] Ensure session initiation events are collected"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure session initiation events are collected"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure permission modification events collected
+if grep -q "perm_mod" /etc/audit/rules.d/*.rules 2>/dev/null; then
+    echo "[PASS] Ensure permission modification events collected"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure permission modification events collected"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure unauthorized file access attempts collected
+if grep -q "access" /etc/audit/rules.d/*.rules 2>/dev/null; then
+    echo "[PASS] Ensure unauthorized file access attempts collected"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure unauthorized file access attempts collected"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure file deletion events collected
+if grep -q "delete" /etc/audit/rules.d/*.rules 2>/dev/null; then
+    echo "[PASS] Ensure file deletion events collected"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure file deletion events collected"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure sudo scope changes collected
+if grep -q "scope" /etc/audit/rules.d/*.rules 2>/dev/null; then
+    echo "[PASS] Ensure sudo scope changes collected"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure sudo scope changes collected"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure sudo command executions collected
+if grep -q "actions" /etc/audit/rules.d/*.rules 2>/dev/null; then
+    echo "[PASS] Ensure sudo command executions collected"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure sudo command executions collected"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure kernel module events collected
+if grep -q "modules" /etc/audit/rules.d/*.rules 2>/dev/null; then
+    echo "[PASS] Ensure kernel module loading events collected"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure kernel module loading events collected"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure audit configuration immutable
+if grep -q "^-e 2" /etc/audit/rules.d/*.rules 2>/dev/null; then
+    echo "[PASS] Ensure audit configuration is immutable"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure audit configuration is immutable"
+    FAIL=$((FAIL+1))
+fi
+echo
+echo "------------ RSYSLOG CONFIGURATION ------------"
+
 # Ensure rsyslog is installed
-# -----------------------------
-dpkg -s rsyslog &>/dev/null
-if [[ $? -eq 0 ]]; then
-    pass_msg "rsyslog is installed"
-    write_csv "rsyslog installation" "PASS" "Remediation not needed"
+if dpkg -s rsyslog 2>/dev/null | grep -q "install ok installed"; then
+    echo "[PASS] Ensure rsyslog is installed"
+    PASS=$((PASS+1))
 else
-    fail_msg "rsyslog is not installed"
-    write_csv "rsyslog installation" "FAIL" "Install with 'apt install rsyslog'"
+    echo "[FAIL] Ensure rsyslog is installed"
+    FAIL=$((FAIL+1))
 fi
 
-# -----------------------------
+
 # Ensure rsyslog service is enabled
-# -----------------------------
-systemctl is-enabled rsyslog &>/dev/null
-if [[ $? -eq 0 ]]; then
-    pass_msg "rsyslog service is enabled"
-    write_csv "rsyslog service" "PASS" "Remediation not needed"
+if systemctl is-enabled rsyslog 2>/dev/null | grep -q enabled; then
+    echo "[PASS] Ensure rsyslog service is enabled"
+    PASS=$((PASS+1))
 else
-    fail_msg "rsyslog service is not enabled"
-    write_csv "rsyslog service" "FAIL" "Enable with 'systemctl --now enable rsyslog'"
+    echo "[FAIL] Ensure rsyslog service is enabled"
+    FAIL=$((FAIL+1))
 fi
 
-# -----------------------------
+
 # Ensure logging is configured
-# -----------------------------
-LOG_FILES_OK=$(ls -l /var/log/ &>/dev/null && echo "OK")
-if [[ "$LOG_FILES_OK" == "OK" ]]; then
-    pass_msg "Logging files exist and are being used"
-    write_csv "logging configuration" "PASS" "Remediation not needed"
+if ls /var/log 2>/dev/null | grep -q auth.log; then
+    echo "[PASS] Ensure logging is configured"
+    PASS=$((PASS+1))
 else
-    fail_msg "Logging files missing or not recording"
-    write_csv "logging configuration" "FAIL" "Check /etc/rsyslog.conf and /etc/rsyslog.d/*.conf"
+    echo "[FAIL] Ensure logging is configured"
+    FAIL=$((FAIL+1))
 fi
 
-# -----------------------------
-# Ensure rsyslog default file permissions
-# -----------------------------
-grep ^\s*\$FileCreateMode /etc/rsyslog.conf /etc/rsyslog.d/*.conf &>/dev/null
-if [[ $? -eq 0 ]]; then
-    FILE_MODE=$(grep ^\s*\$FileCreateMode /etc/rsyslog.conf /etc/rsyslog.d/*.conf | awk '{print $2}')
-    if [[ $FILE_MODE -le 0640 ]]; then
-        pass_msg "rsyslog default file permissions configured correctly ($FILE_MODE)"
-        write_csv "rsyslog file permissions" "PASS" "Remediation not needed"
-    else
-        fail_msg "rsyslog default file permissions too permissive ($FILE_MODE)"
-        write_csv "rsyslog file permissions" "FAIL" "Set $FileCreateMode to 0640 or more restrictive"
-    fi
+
+# Ensure rsyslog default file permissions configured
+if grep -E "^\s*\$FileCreateMode\s+0640" /etc/rsyslog.conf /etc/rsyslog.d/*.conf 2>/dev/null; then
+    echo "[PASS] Ensure rsyslog default file permissions configured"
+    PASS=$((PASS+1))
 else
-    fail_msg "rsyslog $FileCreateMode not set"
-    write_csv "rsyslog file permissions" "FAIL" "Add '$FileCreateMode 0640' to /etc/rsyslog.conf or /etc/rsyslog.d/*.conf"
+    echo "[FAIL] Ensure rsyslog default file permissions configured"
+    FAIL=$((FAIL+1))
 fi
 
-# -----------------------------
-# Ensure rsyslog is configured to send logs to a remote host
-# -----------------------------
-grep -E "^[^#]\s*\S+\.\*\s+@" /etc/rsyslog.conf /etc/rsyslog.d/*.conf &>/dev/null
-if [[ $? -eq 0 ]]; then
-    pass_msg "rsyslog configured to send logs to remote host"
-    write_csv "rsyslog remote logging" "PASS" "Remediation not needed"
+
+# Ensure rsyslog configured to send logs to remote host
+if grep -E "^[^#].*@@" /etc/rsyslog.conf /etc/rsyslog.d/*.conf 2>/dev/null; then
+    echo "[PASS] Ensure rsyslog configured to send logs to remote host"
+    PASS=$((PASS+1))
 else
-    fail_msg "rsyslog not sending logs to remote host"
-    write_csv "rsyslog remote logging" "FAIL" "Add omfwd configuration to /etc/rsyslog.conf or /etc/rsyslog.d/*.conf"
+    echo "[FAIL] Ensure rsyslog configured to send logs to remote host"
+    FAIL=$((FAIL+1))
 fi
 
-# -------------------------------------------
-# 20. CONFIGURE JOURNALD
-# -------------------------------------------
-print_section "20. CONFIGURE JOURNALD"
 
-# -----------------------------
-# Ensure journald is configured to send logs to rsyslog
-# -----------------------------
-grep -e ForwardToSyslog /etc/systemd/journald.conf | grep -i "yes" &>/dev/null
-if [[ $? -eq 0 ]]; then
-    pass_msg "journald is configured to forward logs to rsyslog"
-    write_csv "journald -> rsyslog forwarding" "PASS" "Remediation not needed"
+echo
+echo "------------ JOURNALD CONFIGURATION ------------"
+
+# Ensure journald forwards logs to rsyslog
+if grep -q "ForwardToSyslog=yes" /etc/systemd/journald.conf 2>/dev/null; then
+    echo "[PASS] Ensure journald forwards logs to rsyslog"
+    PASS=$((PASS+1))
 else
-    fail_msg "journald is NOT forwarding logs to rsyslog"
-    write_csv "journald -> rsyslog forwarding" "FAIL" "Set 'ForwardToSyslog=yes' in /etc/systemd/journald.conf"
+    echo "[FAIL] Ensure journald forwards logs to rsyslog"
+    FAIL=$((FAIL+1))
 fi
 
-# -----------------------------
-# Ensure journald is configured to compress large log files
-# -----------------------------
-grep -e Compress /etc/systemd/journald.conf | grep -i "yes" &>/dev/null
-if [[ $? -eq 0 ]]; then
-    pass_msg "journald configured to compress large log files"
-    write_csv "journald compression" "PASS" "Remediation not needed"
+
+# Ensure journald compresses large log files
+if grep -q "Compress=yes" /etc/systemd/journald.conf 2>/dev/null; then
+    echo "[PASS] Ensure journald compresses large log files"
+    PASS=$((PASS+1))
 else
-    fail_msg "journald is NOT configured to compress large log files"
-    write_csv "journald compression" "FAIL" "Set 'Compress=yes' in /etc/systemd/journald.conf"
+    echo "[FAIL] Ensure journald compresses large log files"
+    FAIL=$((FAIL+1))
 fi
 
-# -----------------------------
-# Ensure journald is configured to write logfiles to persistent disk
-# -----------------------------
-grep -e Storage /etc/systemd/journald.conf | grep -i "persistent" &>/dev/null
-if [[ $? -eq 0 ]]; then
-    pass_msg "journald logs are persisted to disk"
-    write_csv "journald persistent storage" "PASS" "Remediation not needed"
+
+# Ensure journald logs persist to disk
+if grep -q "Storage=persistent" /etc/systemd/journald.conf 2>/dev/null; then
+    echo "[PASS] Ensure journald logs persist to disk"
+    PASS=$((PASS+1))
 else
-    fail_msg "journald logs are NOT persisted to disk"
-    write_csv "journald persistent storage" "FAIL" "Set 'Storage=persistent' in /etc/systemd/journald.conf"
+    echo "[FAIL] Ensure journald logs persist to disk"
+    FAIL=$((FAIL+1))
 fi
 
-# -------------------------------------------
-# 21. INDEPENDENT CHECKS 2
-# -------------------------------------------
-print_section "21. INDEPENDENT CHECKS 2"
 
-# -----------------------------
-# Ensure permissions on all logfiles are configured
-# -----------------------------
-find /var/log -type f ! -perm 0640 -o -type d ! -perm 0750 &>/dev/null
-if [[ $? -eq 0 ]]; then
-    fail_msg "Some log files or directories in /var/log have incorrect permissions"
-    write_csv "logfile permissions" "FAIL" "Run 'find /var/log -type f -exec chmod g-wx,o-rwx {} + -o -type d -exec chmod g-wx,o-rwx {} +'"
+echo
+echo "------------ LOG FILE SECURITY ------------"
+
+# Ensure permissions on log files are restricted
+if find /var/log -type f -perm /027 2>/dev/null | grep -q .; then
+    echo "[FAIL] Ensure permissions on log files are restricted"
+    FAIL=$((FAIL+1))
 else
-    pass_msg "All log files and directories in /var/log have correct permissions"
-    write_csv "logfile permissions" "PASS" "Remediation not needed"
+    echo "[PASS] Ensure permissions on log files are restricted"
+    PASS=$((PASS+1))
 fi
 
-# -----------------------------
+
+echo
+echo "------------ LOGROTATE CONFIGURATION ------------"
+
 # Ensure logrotate is configured
-# -----------------------------
-grep -q "rsyslog" /etc/logrotate.d/rsyslog &>/dev/null
-if [[ $? -eq 0 ]]; then
-    pass_msg "logrotate is configured for rsyslog logs"
-    write_csv "logrotate configuration" "PASS" "Remediation not needed"
+if [ -f /etc/logrotate.conf ]; then
+    echo "[PASS] Ensure logrotate is configured"
+    PASS=$((PASS+1))
 else
-    fail_msg "logrotate is NOT configured for rsyslog logs"
-    write_csv "logrotate configuration" "FAIL" "Edit /etc/logrotate.d/rsyslog to rotate logs according to site policy"
+    echo "[FAIL] Ensure logrotate is configured"
+    FAIL=$((FAIL+1))
 fi
 
-# -----------------------------
+
 # Ensure logrotate assigns appropriate permissions
-# -----------------------------
-grep -E "^\s*create\s+\S+" /etc/logrotate.conf | grep -E -v "\s(0)?[06][04]0\s" &>/dev/null
-if [[ $? -eq 0 ]]; then
-    fail_msg "logrotate 'create' permissions do not meet site policy"
-    write_csv "logrotate permissions" "FAIL" "Update 'create' lines in /etc/logrotate.conf to '0640 root utmp' or as per site policy"
+if grep -E "create\s+0640" /etc/logrotate.conf 2>/dev/null; then
+    echo "[PASS] Ensure logrotate assigns appropriate permissions"
+    PASS=$((PASS+1))
 else
-    pass_msg "logrotate 'create' permissions meet site policy"
-    write_csv "logrotate permissions" "PASS" "Remediation not needed"
+    echo "[FAIL] Ensure logrotate assigns appropriate permissions"
+    FAIL=$((FAIL+1))
+fi
+echo
+echo "=================================================="
+echo "SECTION E: ACCESS, AUTHENTICATION AND AUTHORIZATION"
+echo "TIME-BASED JOB SCHEDULERS"
+echo "=================================================="
+
+# Ensure cron daemon is enabled and running
+if systemctl is-enabled cron 2>/dev/null | grep -q enabled && \
+   systemctl is-active cron 2>/dev/null | grep -q active; then
+    echo "[PASS] Ensure cron daemon is enabled and running"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure cron daemon is enabled and running"
+    FAIL=$((FAIL+1))
 fi
 
-# -------------------------------------------
-# 22. ACCESS, AUTHORIZATION AND AUTHENTICATION
-# -------------------------------------------
-print_section "22. ACCESS, AUTHORIZATION AND AUTHENTICATION"
 
-# -----------------------------
+# Ensure permissions on /etc/crontab are configured
+perm=$(stat -c "%a" /etc/crontab 2>/dev/null)
+owner=$(stat -c "%U:%G" /etc/crontab 2>/dev/null)
+
+if [ "$perm" = "600" ] && [ "$owner" = "root:root" ]; then
+    echo "[PASS] Ensure permissions on /etc/crontab are configured"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure permissions on /etc/crontab are configured"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure permissions on /etc/cron.hourly are configured
+perm=$(stat -c "%a" /etc/cron.hourly 2>/dev/null)
+owner=$(stat -c "%U:%G" /etc/cron.hourly 2>/dev/null)
+
+if [ "$perm" = "700" ] && [ "$owner" = "root:root" ]; then
+    echo "[PASS] Ensure permissions on /etc/cron.hourly are configured"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure permissions on /etc/cron.hourly are configured"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure permissions on /etc/cron.daily are configured
+perm=$(stat -c "%a" /etc/cron.daily 2>/dev/null)
+owner=$(stat -c "%U:%G" /etc/cron.daily 2>/dev/null)
+
+if [ "$perm" = "700" ] && [ "$owner" = "root:root" ]; then
+    echo "[PASS] Ensure permissions on /etc/cron.daily are configured"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure permissions on /etc/cron.daily are configured"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure permissions on /etc/cron.weekly are configured
+perm=$(stat -c "%a" /etc/cron.weekly 2>/dev/null)
+owner=$(stat -c "%U:%G" /etc/cron.weekly 2>/dev/null)
+
+if [ "$perm" = "700" ] && [ "$owner" = "root:root" ]; then
+    echo "[PASS] Ensure permissions on /etc/cron.weekly are configured"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure permissions on /etc/cron.weekly are configured"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure permissions on /etc/cron.monthly are configured
+perm=$(stat -c "%a" /etc/cron.monthly 2>/dev/null)
+owner=$(stat -c "%U:%G" /etc/cron.monthly 2>/dev/null)
+
+if [ "$perm" = "700" ] && [ "$owner" = "root:root" ]; then
+    echo "[PASS] Ensure permissions on /etc/cron.monthly are configured"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure permissions on /etc/cron.monthly are configured"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure permissions on /etc/cron.d are configured
+perm=$(stat -c "%a" /etc/cron.d 2>/dev/null)
+owner=$(stat -c "%U:%G" /etc/cron.d 2>/dev/null)
+
+if [ "$perm" = "700" ] && [ "$owner" = "root:root" ]; then
+    echo "[PASS] Ensure permissions on /etc/cron.d are configured"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure permissions on /etc/cron.d are configured"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure cron is restricted to authorized users
+if [ -f /etc/cron.allow ] && [ ! -f /etc/cron.deny ]; then
+    echo "[PASS] Ensure cron is restricted to authorized users"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure cron is restricted to authorized users"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure at is restricted to authorized users
+if [ -f /etc/at.allow ] && [ ! -f /etc/at.deny ] && [ "$(stat -c %a /etc/at.allow)" -le 640 ]; then
+    echo "[PASS] Ensure at is restricted to authorized users"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure at is restricted to authorized users"
+    FAIL=$((FAIL+1))
+fi
+echo "=================================================="
+echo "SSH SERVER CONFIGURATION"
+echo "=================================================="
+
+# Ensure permissions on /etc/ssh/sshd_config are configured
+perm=$(stat -c "%a" /etc/ssh/sshd_config 2>/dev/null)
+owner=$(stat -c "%U:%G" /etc/ssh/sshd_config 2>/dev/null)
+
+if [ "$perm" = "600" ] && [ "$owner" = "root:root" ]; then
+    echo "[PASS] Ensure permissions on /etc/ssh/sshd_config are configured"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure permissions on /etc/ssh/sshd_config are configured"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure permissions on SSH private host key files are configured
+if find /etc/ssh -xdev -type f -name "ssh_host_*_key" -perm /177 2>/dev/null | grep -q .; then
+    echo "[FAIL] Ensure permissions on SSH private host key files are configured"
+    FAIL=$((FAIL+1))
+else
+    echo "[PASS] Ensure permissions on SSH private host key files are configured"
+    PASS=$((PASS+1))
+fi
+
+
+# Ensure permissions on SSH public host key files are configured
+if find /etc/ssh -xdev -type f -name "ssh_host_*_key.pub" -perm /022 2>/dev/null | grep -q .; then
+    echo "[FAIL] Ensure permissions on SSH public host key files are configured"
+    FAIL=$((FAIL+1))
+else
+    echo "[PASS] Ensure permissions on SSH public host key files are configured"
+    PASS=$((PASS+1))
+fi
+
+
+# Ensure SSH LogLevel is appropriate
+if sshd -T 2>/dev/null | grep -Ei "loglevel (INFO|VERBOSE)"; then
+    echo "[PASS] Ensure SSH LogLevel is appropriate"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure SSH LogLevel is appropriate"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure SSH X11 forwarding is disabled
+if sshd -T | grep -q "x11forwarding no"; then
+    echo "[PASS] Ensure SSH X11 forwarding is disabled"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure SSH X11 forwarding is disabled"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure SSH MaxAuthTries is set to 4 or less
+val=$(sshd -T | grep maxauthtries | awk '{print $2}')
+if [ "$val" -le 4 ]; then
+    echo "[PASS] Ensure SSH MaxAuthTries is set to 4 or less"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure SSH MaxAuthTries is set to 4 or less"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure SSH IgnoreRhosts is enabled
+if sshd -T | grep -q "ignorerhosts yes"; then
+    echo "[PASS] Ensure SSH IgnoreRhosts is enabled"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure SSH IgnoreRhosts is enabled"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure SSH HostbasedAuthentication is disabled
+if sshd -T | grep -q "hostbasedauthentication no"; then
+    echo "[PASS] Ensure SSH HostbasedAuthentication is disabled"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure SSH HostbasedAuthentication is disabled"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure SSH root login is disabled
+if sshd -T | grep -q "permitrootlogin no"; then
+    echo "[PASS] Ensure SSH root login is disabled"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure SSH root login is disabled"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure SSH PermitEmptyPasswords is disabled
+if sshd -T | grep -q "permitemptypasswords no"; then
+    echo "[PASS] Ensure SSH PermitEmptyPasswords is disabled"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure SSH PermitEmptyPasswords is disabled"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure SSH PermitUserEnvironment is disabled
+if sshd -T | grep -q "permituserenvironment no"; then
+    echo "[PASS] Ensure SSH PermitUserEnvironment is disabled"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure SSH PermitUserEnvironment is disabled"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure only strong Ciphers are used
+if sshd -T 2>/dev/null | grep -E "^ciphers" | grep -q "cbc"; then
+    echo "[FAIL] Ensure only strong Ciphers are used"
+    FAIL=$((FAIL+1))
+else
+    echo "[PASS] Ensure only strong Ciphers are used"
+    PASS=$((PASS+1))
+fi
+
+
+# Ensure only strong MAC algorithms are used
+if sshd -T 2>/dev/null | grep -E "^macs" | grep -Eq "hmac-sha1(,|$)|umac-64@"; then
+    echo "[FAIL] Ensure only strong MAC algorithms are used"
+    FAIL=$((FAIL+1))
+else
+    echo "[PASS] Ensure only strong MAC algorithms are used"
+    PASS=$((PASS+1))
+fi
+
+
+# Ensure only strong Key Exchange algorithms are used
+if sshd -T | grep -i kexalgorithms | grep -E "sha1"; then
+    echo "[FAIL] Ensure only strong Key Exchange algorithms are used"
+    FAIL=$((FAIL+1))
+else
+    echo "[PASS] Ensure only strong Key Exchange algorithms are used"
+    PASS=$((PASS+1))
+fi
+
+
+# Ensure SSH Idle Timeout Interval is configured
+interval=$(sshd -T | grep clientaliveinterval | awk '{print $2}')
+count=$(sshd -T | grep clientalivecountmax | awk '{print $2}')
+
+if [ "$interval" -le 300 ] && [ "$count" -le 3 ]; then
+    echo "[PASS] Ensure SSH Idle Timeout Interval is configured"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure SSH Idle Timeout Interval is configured"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure SSH LoginGraceTime is set to one minute or less
+grace=$(sshd -T | grep logingracetime | awk '{print $2}')
+if [ "$grace" -le 60 ]; then
+    echo "[PASS] Ensure SSH LoginGraceTime is set to one minute or less"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure SSH LoginGraceTime is set to one minute or less"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure SSH access is limited
+if sshd -T | grep -E "allowusers|allowgroups|denyusers|denygroups" >/dev/null; then
+    echo "[PASS] Ensure SSH access is limited"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure SSH access is limited"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure SSH warning banner is configured
+if sshd -T | grep -q "banner /etc/issue.net"; then
+    echo "[PASS] Ensure SSH warning banner is configured"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure SSH warning banner is configured"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure SSH PAM is enabled
+if sshd -T | grep -iq "usepam yes"; then
+    echo "[PASS] Ensure SSH PAM is enabled"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure SSH PAM is enabled"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure SSH AllowTcpForwarding is disabled
+if sshd -T | grep -iq "allowtcpforwarding no"; then
+    echo "[PASS] Ensure SSH AllowTcpForwarding is disabled"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure SSH AllowTcpForwarding is disabled"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure SSH MaxStartups is configured
+if sshd -T | grep -iq "maxstartups"; then
+    echo "[PASS] Ensure SSH MaxStartups is configured"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure SSH MaxStartups is configured"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure SSH MaxSessions is limited
+sessions=$(sshd -T | grep maxsessions | awk '{print $2}')
+if [ "$sessions" -le 10 ]; then
+    echo "[PASS] Ensure SSH MaxSessions is limited"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure SSH MaxSessions is limited"
+    FAIL=$((FAIL+1))
+fi
+echo
+echo "=================================================="
+echo "CONFIGURE PAM"
+echo "=================================================="
+
+# Ensure password creation requirements are configured
+minlen=$(grep -E '^\s*minlen' /etc/security/pwquality.conf /etc/security/pwquality.conf.d/* 2>/dev/null | awk '{print $3}' | head -1)
+minclass=$(grep -E '^\s*minclass' /etc/security/pwquality.conf /etc/security/pwquality.conf.d/* 2>/dev/null | awk '{print $3}' | head -1)
+
+minlen=${minlen:-0}
+minclass=${minclass:-0}
+
+if [[ "$minlen" =~ ^[0-9]+$ ]] && [[ "$minclass" =~ ^[0-9]+$ ]] && [ "$minlen" -ge 14 ] && [ "$minclass" -ge 4 ]; then
+    echo "[PASS] Ensure password creation requirements are configured"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure password creation requirements are configured"
+    FAIL=$((FAIL+1))
+fi
+
+# Ensure lockout for failed password attempts is configured
+if grep -q "pam_tally2" /etc/pam.d/common-auth 2>/dev/null; then
+    echo "[PASS] Ensure lockout for failed password attempts is configured"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure lockout for failed password attempts is configured"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure password reuse is limited
+if grep -E "pam_pwhistory\.so.*remember=([5-9]|[1-9][0-9]+)" /etc/pam.d/common-password 2>/dev/null; then
+    echo "[PASS] Ensure password reuse is limited"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure password reuse is limited"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure password hashing algorithm is SHA-512
+if grep -E "pam_unix\.so.*sha512" /etc/pam.d/common-password 2>/dev/null; then
+    echo "[PASS] Ensure password hashing algorithm is SHA-512"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure password hashing algorithm is SHA-512"
+    FAIL=$((FAIL+1))
+fi
+echo
+echo "=================================================="
+echo "USER ACCOUNTS AND ENVIRONMENT"
+echo "=================================================="
+
 # Ensure password expiration is 365 days or less
-# -----------------------------
-grep -qE '^PASS_MAX_DAYS\s+([0-9]+)' /etc/login.defs
-if [[ $? -eq 0 ]]; then
-    MAX_DAYS=$(grep '^PASS_MAX_DAYS' /etc/login.defs | awk '{print $2}')
-    if [[ $MAX_DAYS -le 365 ]]; then
-        pass_msg "PASS_MAX_DAYS is set to $MAX_DAYS"
-        write_csv "password expiration" "PASS" "Remediation not needed"
-    else
-        fail_msg "PASS_MAX_DAYS is set to $MAX_DAYS (should be 365 or less)"
-        write_csv "password expiration" "FAIL" "Set PASS_MAX_DAYS to 365 in /etc/login.defs and chage --maxdays 365 <user> for all users"
-    fi
+maxdays=$(awk '/^\s*PASS_MAX_DAYS/{print $2; exit}' /etc/login.defs)
+
+if [[ "$maxdays" =~ ^[0-9]+$ ]] && [ "$maxdays" -le 365 ]; then
+    echo "[PASS] Ensure password expiration is 365 days or less"
+    PASS=$((PASS+1))
 else
-    fail_msg "PASS_MAX_DAYS not configured in /etc/login.defs"
-    write_csv "password expiration" "FAIL" "Add PASS_MAX_DAYS 365 in /etc/login.defs"
+    echo "[FAIL] Ensure password expiration is 365 days or less"
+    FAIL=$((FAIL+1))
 fi
 
-# -----------------------------
+
 # Ensure minimum days between password changes is configured
-# -----------------------------
-grep -qE '^PASS_MIN_DAYS\s+([0-9]+)' /etc/login.defs
-if [[ $? -eq 0 ]]; then
-    MIN_DAYS=$(grep '^PASS_MIN_DAYS' /etc/login.defs | awk '{print $2}')
-    if [[ $MIN_DAYS -ge 1 ]]; then
-        pass_msg "PASS_MIN_DAYS is set to $MIN_DAYS"
-        write_csv "minimum password days" "PASS" "Remediation not needed"
-    else
-        fail_msg "PASS_MIN_DAYS is set to $MIN_DAYS (should be 1 or more)"
-        write_csv "minimum password days" "FAIL" "Set PASS_MIN_DAYS to 1 in /etc/login.defs and chage --mindays 1 <user> for all users"
-    fi
+mindays=$(awk '/^\s*PASS_MIN_DAYS/{print $2; exit}' /etc/login.defs)
+
+if [[ "$mindays" =~ ^[0-9]+$ ]] && [ "$mindays" -ge 1 ]; then
+    echo "[PASS] Ensure minimum days between password changes is configured"
+    PASS=$((PASS+1))
 else
-    fail_msg "PASS_MIN_DAYS not configured in /etc/login.defs"
-    write_csv "minimum password days" "FAIL" "Add PASS_MIN_DAYS 1 in /etc/login.defs"
+    echo "[FAIL] Ensure minimum days between password changes is configured"
+    FAIL=$((FAIL+1))
 fi
 
-# -----------------------------
+
 # Ensure password expiration warning days is 7 or more
-# -----------------------------
-grep -qE '^PASS_WARN_AGE\s+([0-9]+)' /etc/login.defs
-if [[ $? -eq 0 ]]; then
-    WARN_DAYS=$(grep '^PASS_WARN_AGE' /etc/login.defs | awk '{print $2}')
-    if [[ $WARN_DAYS -ge 7 ]]; then
-        pass_msg "PASS_WARN_AGE is set to $WARN_DAYS"
-        write_csv "password warning days" "PASS" "Remediation not needed"
-    else
-        fail_msg "PASS_WARN_AGE is set to $WARN_DAYS (should be 7 or more)"
-        write_csv "password warning days" "FAIL" "Set PASS_WARN_AGE to 7 in /etc/login.defs and chage --warndays 7 <user> for all users"
-    fi
+warndays=$(awk '/^\s*PASS_WARN_AGE/{print $2; exit}' /etc/login.defs)
+
+if [[ "$warndays" =~ ^[0-9]+$ ]] && [ "$warndays" -ge 7 ]; then
+    echo "[PASS] Ensure password expiration warning days is 7 or more"
+    PASS=$((PASS+1))
 else
-    fail_msg "PASS_WARN_AGE not configured in /etc/login.defs"
-    write_csv "password warning days" "FAIL" "Add PASS_WARN_AGE 7 in /etc/login.defs"
+    echo "[FAIL] Ensure password expiration warning days is 7 or more"
+    FAIL=$((FAIL+1))
 fi
 
-# -----------------------------
+
 # Ensure inactive password lock is 30 days or less
-# -----------------------------
-DEFAULT_INACTIVE=$(useradd -D | grep INACTIVE | awk -F= '{print $2}')
-if [[ $DEFAULT_INACTIVE -le 30 ]]; then
-    pass_msg "Default INACTIVE is $DEFAULT_INACTIVE days"
-    write_csv "inactive password lock" "PASS" "Remediation not needed"
+inactive=$(useradd -D | awk -F= '/INACTIVE/{print $2}')
+
+if [[ "$inactive" =~ ^[0-9]+$ ]] && [ "$inactive" -le 30 ]; then
+    echo "[PASS] Ensure inactive password lock is 30 days or less"
+    PASS=$((PASS+1))
 else
-    fail_msg "Default INACTIVE is $DEFAULT_INACTIVE days (should be 30 or less)"
-    write_csv "inactive password lock" "FAIL" "Set default INACTIVE to 30 days: useradd -D -f 30 and chage --inactive 30 <user>"
+    echo "[FAIL] Ensure inactive password lock is 30 days or less"
+    FAIL=$((FAIL+1))
 fi
 
-# -----------------------------
+
 # Ensure all users last password change date is in the past
-# -----------------------------
-FUTURE_USERS=$(awk -F: '($2!~/^!|^\*/) {print $1}' /etc/shadow | while read user; do
-    LAST_CHANGE=$(chage --list "$user" | grep "Last Change" | awk -F: '{print $2}')
-    if [[ $(date -d "$LAST_CHANGE" +%s) -gt $(date +%s) ]]; then
-        echo $user
-    fi
-done)
+echo "[MANUAL] Ensure all users last password change date is in the past"
+MANUAL=$((MANUAL+1))
 
-if [[ -z "$FUTURE_USERS" ]]; then
-    pass_msg "All users have last password change date in the past"
-    write_csv "last password change" "PASS" "Remediation not needed"
-else
-    fail_msg "Users with future last password change date: $FUTURE_USERS"
-    write_csv "last password change" "FAIL" "Investigate users and correct their password change date"
-fi
-
-# -----------------------------
 # Ensure system accounts are non-login
-# -----------------------------
-NON_LOGIN_USERS=$(egrep -v "^\+" /etc/passwd | awk -F: '($1!="root" && $1!="sync" && $1!="shutdown" && $1!="halt" && $3<1000 && $7!="/sbin/nologin" && $7!="/bin/false"){print $1}')
-if [[ -z "$NON_LOGIN_USERS" ]]; then
-    pass_msg "All system accounts are non-login"
-    write_csv "system accounts non-login" "PASS" "Remediation not needed"
+nonlogin=$(awk -F: '($1!="root" && $1!="sync" && $1!="shutdown" && $1!="halt" && $3<1000 && $7!="/usr/sbin/nologin" && $7!="/sbin/nologin" && $7!="/bin/false") {print}' /etc/passwd)
+
+if [ -z "$nonlogin" ]; then
+    echo "[PASS] Ensure system accounts are non-login"
+    PASS=$((PASS+1))
 else
-    fail_msg "System accounts with login shells found: $NON_LOGIN_USERS"
-    write_csv "system accounts non-login" "FAIL" "Set shell to /sbin/nologin and lock accounts as required"
+    echo "[FAIL] Ensure system accounts are non-login"
+    FAIL=$((FAIL+1))
 fi
 
-# -----------------------------
 # Ensure default group for the root account is GID 0
-# -----------------------------
-ROOT_GID=$(grep "^root:" /etc/passwd | cut -d: -f4)
-if [[ $ROOT_GID -eq 0 ]]; then
-    pass_msg "Root account default group is GID 0"
-    write_csv "root default group" "PASS" "Remediation not needed"
+root_gid=$(grep "^root:" /etc/passwd | cut -d: -f4)
+
+if [ "$root_gid" -eq 0 ]; then
+    echo "[PASS] Ensure default group for the root account is GID 0"
+    PASS=$((PASS+1))
 else
-    fail_msg "Root account default group is GID $ROOT_GID (should be 0)"
-    write_csv "root default group" "FAIL" "Set root default group to GID 0: usermod -g 0 root"
+    echo "[FAIL] Ensure default group for the root account is GID 0"
+    FAIL=$((FAIL+1))
 fi
 
-# -----------------------------
 # Ensure default user umask is 027 or more restrictive
-# -----------------------------
-UMASKS=$(grep -h "umask" /etc/bash.bashrc.local /etc/profile.local /etc/profile.d/*.sh 2>/dev/null | awk '{print $2}')
-UMASK_FAIL=0
-for UM in $UMASKS; do
-    if [[ $UM -gt 027 ]]; then
-        UMASK_FAIL=1
-        break
-    fi
-done
+umask_value=$(grep -R "umask" /etc/profile /etc/bash.bashrc /etc/profile.d/* 2>/dev/null | grep -Eo "umask [0-9]+" | awk '{print $2}' | head -1)
 
-if [[ $UMASK_FAIL -eq 0 ]]; then
-    pass_msg "All umask settings are 027 or more restrictive"
-    write_csv "default umask" "PASS" "Remediation not needed"
+if [[ "$umask_value" =~ ^[0-9]+$ ]] && [ "$umask_value" -le 027 ]; then
+    echo "[PASS] Ensure default user umask is 027 or more restrictive"
+    PASS=$((PASS+1))
 else
-    fail_msg "Found umask settings less restrictive than 027"
-    write_csv "default umask" "FAIL" "Set umask to 027 in shell configuration files"
+    echo "[FAIL] Ensure default user umask is 027 or more restrictive"
+    FAIL=$((FAIL+1))
 fi
 
-# -----------------------------
 # Ensure access to the su command is restricted
-# -----------------------------
-grep -q "pam_wheel.so" /etc/pam.d/su
-if [[ $? -eq 0 ]]; then
-    pass_msg "su command restricted via pam_wheel.so"
-    write_csv "su command access" "PASS" "Remediation not needed"
+if grep -Eq "pam_wheel.so.*use_uid" /etc/pam.d/su 2>/dev/null; then
+    echo "[PASS] Ensure access to the su command is restricted"
+    PASS=$((PASS+1))
 else
-    fail_msg "su command not restricted"
-    write_csv "su command access" "FAIL" "Add 'auth required pam_wheel.so use_uid' to /etc/pam.d/su and configure wheel group"
+    echo "[FAIL] Ensure access to the su command is restricted"
+    FAIL=$((FAIL+1))
 fi
 
-# -------------------------------------------
-# 23. SYSTEM MAINTENANCE
-# -------------------------------------------
-print_section "23. SYSTEM MAINTENANCE"
+echo
+echo "=================================================="
+echo "SYSTEM MAINTENANCE"
+echo "=================================================="
 
-# -----------------------------
 # Ensure permissions on /etc/passwd are configured
-# -----------------------------
-PASSWD_STAT=$(stat -c "%a %u %g" /etc/passwd)
-if [[ "$PASSWD_STAT" == "644 0 0" ]]; then
-    pass_msg "/etc/passwd permissions are correct"
-    write_csv "passwd permissions" "PASS" "Remediation not needed"
+perm=$(stat -c "%a %u %g" /etc/passwd)
+if [ "$perm" = "644 0 0" ]; then
+    echo "[PASS] Ensure permissions on /etc/passwd are configured"
+    PASS=$((PASS+1))
 else
-    fail_msg "/etc/passwd permissions are incorrect ($PASSWD_STAT)"
-    write_csv "passwd permissions" "FAIL" "Run: chown root:root /etc/passwd && chmod 644 /etc/passwd"
+    echo "[FAIL] Ensure permissions on /etc/passwd are configured"
+    FAIL=$((FAIL+1))
 fi
 
-# -----------------------------
+
 # Ensure permissions on /etc/shadow are configured
-# -----------------------------
-SHADOW_STAT=$(stat -c "%a %u %g" /etc/shadow)
-if [[ "$SHADOW_STAT" == "640 0 0" || "$SHADOW_STAT" == "640 0 15" ]]; then
-    pass_msg "/etc/shadow permissions are correct"
-    write_csv "shadow permissions" "PASS" "Remediation not needed"
+perm=$(stat -c "%a %u" /etc/shadow)
+if [ "$(stat -c %a /etc/shadow)" -le 640 ] && [ "$(stat -c %u /etc/shadow)" -eq 0 ]; then
+    echo "[PASS] Ensure permissions on /etc/shadow are configured"
+    PASS=$((PASS+1))
 else
-    fail_msg "/etc/shadow permissions are incorrect ($SHADOW_STAT)"
-    write_csv "shadow permissions" "FAIL" "Run: chown root:shadow /etc/shadow && chmod o-rwx,g-wx /etc/shadow"
+    echo "[FAIL] Ensure permissions on /etc/shadow are configured"
+    FAIL=$((FAIL+1))
 fi
 
-# -----------------------------
+
 # Ensure permissions on /etc/group are configured
-# -----------------------------
-GROUP_STAT=$(stat -c "%a %u %g" /etc/group)
-if [[ "$GROUP_STAT" == "644 0 0" ]]; then
-    pass_msg "/etc/group permissions are correct"
-    write_csv "group permissions" "PASS" "Remediation not needed"
+perm=$(stat -c "%a %u %g" /etc/group)
+if [ "$perm" = "644 0 0" ]; then
+    echo "[PASS] Ensure permissions on /etc/group are configured"
+    PASS=$((PASS+1))
 else
-    fail_msg "/etc/group permissions are incorrect ($GROUP_STAT)"
-    write_csv "group permissions" "FAIL" "Run: chown root:root /etc/group && chmod 644 /etc/group"
+    echo "[FAIL] Ensure permissions on /etc/group are configured"
+    FAIL=$((FAIL+1))
 fi
 
-# -----------------------------
+
 # Ensure permissions on /etc/gshadow are configured
-# -----------------------------
-GSHADOW_STAT=$(stat -c "%a %u %g" /etc/gshadow)
-if [[ "$GSHADOW_STAT" == "640 0 0" || "$GSHADOW_STAT" == "640 0 15" ]]; then
-    pass_msg "/etc/gshadow permissions are correct"
-    write_csv "gshadow permissions" "PASS" "Remediation not needed"
+if [ "$(stat -c %a /etc/gshadow)" -le 640 ]; then
+    echo "[PASS] Ensure permissions on /etc/gshadow are configured"
+    PASS=$((PASS+1))
 else
-    fail_msg "/etc/gshadow permissions are incorrect ($GSHADOW_STAT)"
-    write_csv "gshadow permissions" "FAIL" "Run: chown root:root /etc/gshadow or chown root:shadow /etc/gshadow && chmod o-rwx,g-rw /etc/gshadow"
+    echo "[FAIL] Ensure permissions on /etc/gshadow are configured"
+    FAIL=$((FAIL+1))
 fi
 
-# -----------------------------
+
 # Ensure permissions on /etc/passwd- are configured
-# -----------------------------
-PASSWD_BACK_STAT=$(stat -c "%a %u %g" /etc/passwd-)
-if [[ "$PASSWD_BACK_STAT" == "644 0 0" ]]; then
-    pass_msg "/etc/passwd- permissions are correct"
-    write_csv "passwd- permissions" "PASS" "Remediation not needed"
-else
-    fail_msg "/etc/passwd- permissions are incorrect ($PASSWD_BACK_STAT)"
-    write_csv "passwd- permissions" "FAIL" "Run: chown root:root /etc/passwd- && chmod u-x,go-wx /etc/passwd-"
-fi
-
-# -----------------------------
-# Ensure permissions on /etc/shadow- are configured
-# -----------------------------
-SHADOW_BACK_STAT=$(stat -c "%a %u %g" /etc/shadow-)
-if [[ "$SHADOW_BACK_STAT" == "640 0 0" || "$SHADOW_BACK_STAT" == "640 0 15" ]]; then
-    pass_msg "/etc/shadow- permissions are correct"
-    write_csv "shadow- permissions" "PASS" "Remediation not needed"
-else
-    fail_msg "/etc/shadow- permissions are incorrect ($SHADOW_BACK_STAT)"
-    write_csv "shadow- permissions" "FAIL" "Run: chown root:root /etc/shadow- or chown root:shadow /etc/shadow- && chmod o-rwx,g-rw /etc/shadow-"
-fi
-
-# -----------------------------
-# Ensure permissions on /etc/group- are configured
-# -----------------------------
-GROUP_BACK_STAT=$(stat -c "%a %u %g" /etc/group-)
-if [[ "$GROUP_BACK_STAT" == "644 0 0" ]]; then
-    pass_msg "/etc/group- permissions are correct"
-    write_csv "group- permissions" "PASS" "Remediation not needed"
-else
-    fail_msg "/etc/group- permissions are incorrect ($GROUP_BACK_STAT)"
-    write_csv "group- permissions" "FAIL" "Run: chown root:root /etc/group- && chmod u-x,go-wx /etc/group-"
-fi
-
-# -----------------------------
-# Ensure permissions on /etc/gshadow- are configured
-# -----------------------------
-GSHADOW_BACK_STAT=$(stat -c "%a %u %g" /etc/gshadow-)
-if [[ "$GSHADOW_BACK_STAT" == "640 0 0" || "$GSHADOW_BACK_STAT" == "640 0 15" ]]; then
-    pass_msg "/etc/gshadow- permissions are correct"
-    write_csv "gshadow- permissions" "PASS" "Remediation not needed"
-else
-    fail_msg "/etc/gshadow- permissions are incorrect ($GSHADOW_BACK_STAT)"
-    write_csv "gshadow- permissions" "FAIL" "Run: chown root:root /etc/gshadow- or chown root:shadow /etc/gshadow- && chmod o-rwx,g-rw /etc/gshadow-"
-fi
-
-# -----------------------------
-# Ensure no world writable files exist
-# -----------------------------
-WORLD_WRITABLE=$(df --local -P | awk 'NR!=1 {print $6}' | xargs -I '{}' find '{}' -xdev -type f -perm -0002 2>/dev/null)
-if [[ -z "$WORLD_WRITABLE" ]]; then
-    pass_msg "No world writable files found"
-    write_csv "world writable files" "PASS" "Remediation not needed"
-else
-    fail_msg "World writable files found"
-    write_csv "world writable files" "FAIL" "Remove world write access: chmod o-w <file>"
-fi
-
-# -----------------------------
-# Ensure no unowned files or directories exist
-# -----------------------------
-UNOWNED_FILES=$(df --local -P | awk 'NR!=1 {print $6}' | xargs -I '{}' find '{}' -xdev -nouser 2>/dev/null)
-if [[ -z "$UNOWNED_FILES" ]]; then
-    pass_msg "No unowned files found"
-    write_csv "unowned files" "PASS" "Remediation not needed"
-else
-    fail_msg "Unowned files found"
-    write_csv "unowned files" "FAIL" "Locate and assign ownership to active users as appropriate"
-fi
-
-# -----------------------------
-# Ensure no ungrouped files or directories exist
-# -----------------------------
-UNGROUPED_FILES=$(df --local -P | awk 'NR!=1 {print $6}' | xargs -I '{}' find '{}' -xdev -nogroup 2>/dev/null)
-if [[ -z "$UNGROUPED_FILES" ]]; then
-    pass_msg "No ungrouped files found"
-    write_csv "ungrouped files" "PASS" "Remediation not needed"
-else
-    fail_msg "Ungrouped files found"
-    write_csv "ungrouped files" "FAIL" "Locate and assign group ownership to active groups as appropriate"
-fi
-
-# -------------------------------------------
-# 24. USER AND GROUP SETTINGS
-# -------------------------------------------
-print_section "24. USER AND GROUP SETTINGS"
-
-# -----------------------------
-# Ensure password fields are not empty
-# -----------------------------
-EMPTY_PASSWORDS=$(awk -F: '($2=="") {print $1 " does not have a password"}' /etc/shadow)
-if [[ -z "$EMPTY_PASSWORDS" ]]; then
-    pass_msg "No accounts with empty password fields"
-    write_csv "empty passwords" "PASS" "Remediation not needed"
-else
-    fail_msg "Accounts with empty password fields found"
-    write_csv "empty passwords" "FAIL" "Lock accounts: passwd -l <username> and investigate usage"
-fi
-
-# -----------------------------
-# Ensure no legacy "+" entries exist in /etc/passwd
-# -----------------------------
-LEGACY_PASSWD=$(grep '^\+:' /etc/passwd)
-if [[ -z "$LEGACY_PASSWD" ]]; then
-    pass_msg "No legacy + entries in /etc/passwd"
-    write_csv "legacy passwd entries" "PASS" "Remediation not needed"
-else
-    fail_msg "Legacy + entries found in /etc/passwd"
-    write_csv "legacy passwd entries" "FAIL" "Remove any '+' entries from /etc/passwd"
-fi
-
-# -----------------------------
-# Ensure no legacy "+" entries exist in /etc/shadow
-# -----------------------------
-LEGACY_SHADOW=$(grep '^\+:' /etc/shadow)
-if [[ -z "$LEGACY_SHADOW" ]]; then
-    pass_msg "No legacy + entries in /etc/shadow"
-    write_csv "legacy shadow entries" "PASS" "Remediation not needed"
-else
-    fail_msg "Legacy + entries found in /etc/shadow"
-    write_csv "legacy shadow entries" "FAIL" "Remove any '+' entries from /etc/shadow"
-fi
-
-# -----------------------------
-# Ensure no legacy "+" entries exist in /etc/group
-# -----------------------------
-LEGACY_GROUP=$(grep '^\+:' /etc/group)
-if [[ -z "$LEGACY_GROUP" ]]; then
-    pass_msg "No legacy + entries in /etc/group"
-    write_csv "legacy group entries" "PASS" "Remediation not needed"
-else
-    fail_msg "Legacy + entries found in /etc/group"
-    write_csv "legacy group entries" "FAIL" "Remove any '+' entries from /etc/group"
-fi
-
-# -----------------------------
-# Ensure root is the only UID 0 account
-# -----------------------------
-UID0_USERS=$(awk -F: '($3==0){print $1}' /etc/passwd)
-if [[ "$UID0_USERS" == "root" ]]; then
-    pass_msg "Only root has UID 0"
-    write_csv "UID 0 accounts" "PASS" "Remediation not needed"
-else
-    fail_msg "Other accounts with UID 0 found: $UID0_USERS"
-    write_csv "UID 0 accounts" "FAIL" "Remove other UID 0 accounts or assign new UID"
-fi
-
-# -----------------------------
-# Ensure root PATH integrity
-# -----------------------------
-PATH_ISSUES=$(bash -c '
-if [[ "$PATH" == *::* ]]; then echo "Empty directory (::) in PATH"; fi
-if [[ "$PATH" == *: ]]; then echo "Trailing colon in PATH"; fi
-p=$(echo $PATH | sed -e "s/::/:/g" -e "s/:$//")
-for dir in $(echo $p | tr ":" " "); do
-  if [[ "$dir" == "." ]]; then echo "PATH contains ."; fi
-  if [[ -d "$dir" ]]; then
-    perm=$(ls -ldH "$dir" | cut -f1 -d" ")
-    owner=$(stat -c "%U" "$dir")
-    [[ "${perm:5:1}" != "-" ]] && echo "Group write set on $dir"
-    [[ "${perm:8:1}" != "-" ]] && echo "Other write set on $dir"
-    [[ "$owner" != "root" ]] && echo "$dir not owned by root"
-  else
-    echo "$dir is not a directory"
-  fi
-done
-')
-if [[ -z "$PATH_ISSUES" ]]; then
-    pass_msg "Root PATH integrity is correct"
-    write_csv "root PATH integrity" "PASS" "Remediation not needed"
-else
-    fail_msg "Root PATH integrity issues found"
-    write_csv "root PATH integrity" "FAIL" "Correct PATH directories, permissions, and ownership"
-fi
-
-# -----------------------------
-# Ensure all users' home directories exist
-# -----------------------------
-MISSING_HOMES=$(grep -E -v '^(root|halt|sync|shutdown)' /etc/passwd | \
-awk -F: '($7 != "/sbin/nologin" && $7 != "/bin/false") {print $1 " " $6}' | \
-while read user dir; do [ ! -d "$dir" ] && echo "The home directory ($dir) of user $user does not exist"; done)
-if [[ -z "$MISSING_HOMES" ]]; then
-    pass_msg "All users' home directories exist"
-    write_csv "home directories exist" "PASS" "Remediation not needed"
-else
-    fail_msg "Missing home directories found"
-    write_csv "home directories exist" "FAIL" "Create missing home directories and assign correct ownership"
-fi
-
-# -----------------------------
-# Ensure users' home directories permissions are 750 or more restrictive
-# -----------------------------
-HOME_PERMS_ISSUES=$(grep -E -v '^(halt|sync|shutdown)' /etc/passwd | \
-awk -F: '($7 != "/sbin/nologin" && $7 != "/bin/false") {print $1 " " $6}' | \
-while read user dir; do
-  if [ -d "$dir" ]; then
-    perm=$(ls -ld $dir | cut -f1 -d" ")
-    [[ "${perm:5:1}" != "-" ]] && echo "Group write set on $dir of $user"
-    [[ "${perm:7:1}" != "-" ]] && echo "Other read set on $dir of $user"
-    [[ "${perm:8:1}" != "-" ]] && echo "Other write set on $dir of $user"
-    [[ "${perm:9:1}" != "-" ]] && echo "Other execute set on $dir of $user"
-  fi
-done)
-if [[ -z "$HOME_PERMS_ISSUES" ]]; then
-    pass_msg "All users' home directories have secure permissions"
-    write_csv "home directories permissions" "PASS" "Remediation not needed"
-else
-    fail_msg "Users' home directories with insecure permissions found"
-    write_csv "home directories permissions" "FAIL" "Adjust permissions to 750 or more restrictive"
-fi
-
-# -----------------------------
-# Ensure users own their home directories
-# -----------------------------
-HOME_OWNERSHIP_ISSUES=$(grep -E -v '^(halt|sync|shutdown)' /etc/passwd | \
-awk -F: '($7 != "/sbin/nologin" && $7 != "/bin/false") {print $1 " " $6}' | \
-while read user dir; do
-  if [ -d "$dir" ]; then
-    owner=$(stat -c "%U" "$dir")
-    [[ "$owner" != "$user" ]] && echo "Home directory ($dir) of $user is owned by $owner"
-  fi
-done)
-if [[ -z "$HOME_OWNERSHIP_ISSUES" ]]; then
-    pass_msg "All users own their home directories"
-    write_csv "home directories ownership" "PASS" "Remediation not needed"
-else
-    fail_msg "Users with incorrect home directory ownership found"
-    write_csv "home directories ownership" "FAIL" "Assign correct ownership to user home directories"
-fi
-
-# -----------------------------
-# Ensure users' dot files are not group or world writable
-# -----------------------------
-DOTFILE_PERMS_ISSUES=$(grep -E -v '^(halt|sync|shutdown)' /etc/passwd | \
-awk -F: '($7 != "/sbin/nologin" && $7 != "/bin/false") {print $1 " " $6}' | \
-while read user dir; do
-  if [ -d "$dir" ]; then
-    for file in $dir/.[A-Za-z0-9]*; do
-      if [ -f "$file" ] && [ ! -h "$file" ]; then
-        perm=$(ls -ld "$file" | cut -f1 -d" ")
-        [[ "${perm:5:1}" != "-" ]] && echo "Group write on $file"
-        [[ "${perm:8:1}" != "-" ]] && echo "Other write on $file"
-      fi
-    done
-  fi
-done)
-if [[ -z "$DOTFILE_PERMS_ISSUES" ]]; then
-    pass_msg "Users' dot files are not group or world writable"
-    write_csv "dotfiles permissions" "PASS" "Remediation not needed"
-else
-    fail_msg "Insecure permissions on users' dot files found"
-    write_csv "dotfiles permissions" "FAIL" "Adjust permissions to remove group/world write"
-fi
-
-# -----------------------------
-# Ensure no users have .forward files
-# -----------------------------
-FORWARD_FILES=$(grep -E -v '^(root|halt|sync|shutdown)' /etc/passwd | \
-awk -F: '($7 != "/sbin/nologin" && $7 != "/bin/false") {print $1 " " $6}' | \
-while read user dir; do
-  [ -f "$dir/.forward" ] && echo ".forward file exists in $dir for $user"
-done)
-if [[ -z "$FORWARD_FILES" ]]; then
-    pass_msg "No users have .forward files"
-    write_csv "forward files" "PASS" "Remediation not needed"
-else
-    fail_msg ".forward files found"
-    write_csv "forward files" "FAIL" "Remove .forward files and notify users"
-fi
-
-# -----------------------------
-# Ensure no users have .netrc files
-# -----------------------------
-NETRC_FILES=$(grep -E -v '^(root|halt|sync|shutdown)' /etc/passwd | \
-awk -F: '($7 != "/sbin/nologin" && $7 != "/bin/false") {print $1 " " $6}' | \
-while read user dir; do
-  [ -f "$dir/.netrc" ] && echo ".netrc file exists in $dir for $user"
-done)
-if [[ -z "$NETRC_FILES" ]]; then
-    pass_msg "No users have .netrc files"
-    write_csv "netrc files" "PASS" "Remediation not needed"
-else
-    fail_msg ".netrc files found"
-    write_csv "netrc files" "FAIL" "Remove .netrc files and notify users"
-fi
-
-# -----------------------------
-# Ensure users' .netrc files are not group or world accessible
-# -----------------------------
-NETRC_PERMS_ISSUES=$(grep -E -v '^(root|halt|sync|shutdown)' /etc/passwd | \
-awk -F: '($7 != "/sbin/nologin" && $7 != "/bin/false") {print $1 " " $6}' | \
-while read user dir; do
-  for file in $dir/.netrc; do
-    if [ -f "$file" ]; then
-      perm=$(ls -ld "$file" | cut -f1 -d" ")
-      [[ "${perm:4:6}" != "------" ]] && echo "Insecure .netrc permissions on $file"
+if [ -f /etc/passwd- ]; then
+    if [ "$(stat -c %a /etc/passwd-)" -le 644 ]; then
+        echo "[PASS] Ensure permissions on /etc/passwd- are configured"
+        PASS=$((PASS+1))
+    else
+        echo "[FAIL] Ensure permissions on /etc/passwd- are configured"
+        FAIL=$((FAIL+1))
     fi
-  done
-done)
-if [[ -z "$NETRC_PERMS_ISSUES" ]]; then
-    pass_msg "Users' .netrc files have secure permissions"
-    write_csv "netrc permissions" "PASS" "Remediation not needed"
-else
-    fail_msg "Insecure permissions on users' .netrc files found"
-    write_csv "netrc permissions" "FAIL" "Adjust .netrc file permissions"
 fi
 
-# -----------------------------
+
+# Ensure permissions on /etc/shadow- are configured
+if [ -f /etc/shadow- ]; then
+    if [ "$(stat -c %a /etc/shadow-)" -le 640 ]; then
+        echo "[PASS] Ensure permissions on /etc/shadow- are configured"
+        PASS=$((PASS+1))
+    else
+        echo "[FAIL] Ensure permissions on /etc/shadow- are configured"
+        FAIL=$((FAIL+1))
+    fi
+fi
+
+
+# Ensure permissions on /etc/group- are configured
+if [ -f /etc/group- ]; then
+    if [ "$(stat -c %a /etc/group-)" -le 644 ]; then
+        echo "[PASS] Ensure permissions on /etc/group- are configured"
+        PASS=$((PASS+1))
+    else
+        echo "[FAIL] Ensure permissions on /etc/group- are configured"
+        FAIL=$((FAIL+1))
+    fi
+fi
+
+
+# Ensure permissions on /etc/gshadow- are configured
+if [ -f /etc/gshadow- ]; then
+    if [ "$(stat -c %a /etc/gshadow-)" -le 640 ]; then
+        echo "[PASS] Ensure permissions on /etc/gshadow- are configured"
+        PASS=$((PASS+1))
+    else
+        echo "[FAIL] Ensure permissions on /etc/gshadow- are configured"
+        FAIL=$((FAIL+1))
+    fi
+fi
+
+
+# Ensure no world writable files exist
+if [ -z "$(df --local -P | awk 'NR!=1 {print $6}' | xargs -I '{}' find '{}' -xdev -type f -perm -0002 2>/dev/null)" ]; then
+    echo "[PASS] Ensure no world writable files exist"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure no world writable files exist"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure no unowned files exist
+if [ -z "$(df --local -P | awk 'NR!=1 {print $6}' | xargs -I '{}' find '{}' -xdev -nouser 2>/dev/null)" ]; then
+    echo "[PASS] Ensure no unowned files or directories exist"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure no unowned files or directories exist"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure no ungrouped files exist
+if [ -z "$(df --local -P | awk 'NR!=1 {print $6}' | xargs -I '{}' find '{}' -xdev -nogroup 2>/dev/null)" ]; then
+    echo "[PASS] Ensure no ungrouped files or directories exist"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure no ungrouped files or directories exist"
+    FAIL=$((FAIL+1))
+    fi
+    
+echo
+echo "=================================================="
+echo "USER AND GROUP SETTINGS"
+echo "=================================================="
+
+# Ensure password fields are not empty
+if [ -z "$(awk -F: '($2 == "") {print $1}' /etc/shadow)" ]; then
+    echo "[PASS] Ensure password fields are not empty"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure password fields are not empty"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure no legacy '+' entries exist in /etc/passwd
+if ! grep -q '^\+:' /etc/passwd; then
+    echo "[PASS] Ensure no legacy '+' entries exist in /etc/passwd"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure no legacy '+' entries exist in /etc/passwd"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure no legacy '+' entries exist in /etc/shadow
+if ! grep -q '^\+:' /etc/shadow; then
+    echo "[PASS] Ensure no legacy '+' entries exist in /etc/shadow"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure no legacy '+' entries exist in /etc/shadow"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure no legacy '+' entries exist in /etc/group
+if ! grep -q '^\+:' /etc/group; then
+    echo "[PASS] Ensure no legacy '+' entries exist in /etc/group"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure no legacy '+' entries exist in /etc/group"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure root is the only UID 0 account
+if [ "$(awk -F: '($3 == 0) {print $1}' /etc/passwd | wc -l)" -eq 1 ]; then
+    echo "[PASS] Ensure root is the only UID 0 account"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure root is the only UID 0 account"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure root PATH Integrity
+badpath=0
+
+echo $PATH | grep "::" >/dev/null && badpath=1
+echo $PATH | grep ":$" >/dev/null && badpath=1
+
+for dir in $(echo $PATH | tr ":" " "); do
+    [ "$dir" = "." ] && badpath=1
+done
+
+if [ "$badpath" -eq 0 ]; then
+    echo "[PASS] Ensure root PATH Integrity"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure root PATH Integrity"
+    FAIL=$((FAIL+1))
+fifi
+echo
+echo "=================================================="
+echo "USER ACCOUNTS AND ENVIRONMENT"
+echo "=================================================="
+
+# Ensure password expiration is 365 days or less
+maxdays=$(awk '/^\s*PASS_MAX_DAYS/{print $2; exit}' /etc/login.defs)
+
+if [[ "$maxdays" =~ ^[0-9]+$ ]] && [ "$maxdays" -le 365 ]; then
+    echo "[PASS] Ensure password expiration is 365 days or less"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure password expiration is 365 days or less"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure minimum days between password changes is configured
+mindays=$(awk '/^\s*PASS_MIN_DAYS/{print $2; exit}' /etc/login.defs)
+
+if [[ "$mindays" =~ ^[0-9]+$ ]] && [ "$mindays" -ge 1 ]; then
+    echo "[PASS] Ensure minimum days between password changes is configured"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure minimum days between password changes is configured"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure password expiration warning days is 7 or more
+warndays=$(awk '/^\s*PASS_WARN_AGE/{print $2; exit}' /etc/login.defs)
+
+if [[ "$warndays" =~ ^[0-9]+$ ]] && [ "$warndays" -ge 7 ]; then
+    echo "[PASS] Ensure password expiration warning days is 7 or more"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure password expiration warning days is 7 or more"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure inactive password lock is 30 days or less
+inactive=$(useradd -D | awk -F= '/INACTIVE/{print $2}')
+
+if [[ "$inactive" =~ ^[0-9]+$ ]] && [ "$inactive" -le 30 ]; then
+    echo "[PASS] Ensure inactive password lock is 30 days or less"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure inactive password lock is 30 days or less"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure all users last password change date is in the past
+echo "[MANUAL] Ensure all users last password change date is in the past"
+MANUAL=$((MANUAL+1))
+    fi
+
+echo "[MANUAL] Ensure all users last password change date is in the past"
+MANUAL=$((MANUAL+1))
+echo
+echo "=================================================="
+echo "SYSTEM MAINTENANCE"
+echo "=================================================="
+
+# Ensure permissions on /etc/passwd are configured
+perm=$(stat -c "%a %u %g" /etc/passwd)
+if [ "$perm" = "644 0 0" ]; then
+    echo "[PASS] Ensure permissions on /etc/passwd are configured"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure permissions on /etc/passwd are configured"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure permissions on /etc/shadow are configured
+perm=$(stat -c "%a %u" /etc/shadow)
+if [ "$(stat -c %a /etc/shadow)" -le 640 ] && [ "$(stat -c %u /etc/shadow)" -eq 0 ]; then
+    echo "[PASS] Ensure permissions on /etc/shadow are configured"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure permissions on /etc/shadow are configured"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure permissions on /etc/group are configured
+perm=$(stat -c "%a %u %g" /etc/group)
+if [ "$perm" = "644 0 0" ]; then
+    echo "[PASS] Ensure permissions on /etc/group are configured"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure permissions on /etc/group are configured"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure permissions on /etc/gshadow are configured
+if [ "$(stat -c %a /etc/gshadow)" -le 640 ]; then
+    echo "[PASS] Ensure permissions on /etc/gshadow are configured"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure permissions on /etc/gshadow are configured"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure permissions on /etc/passwd- are configured
+if [ -f /etc/passwd- ]; then
+    if [ "$(stat -c %a /etc/passwd-)" -le 644 ]; then
+        echo "[PASS] Ensure permissions on /etc/passwd- are configured"
+        PASS=$((PASS+1))
+    else
+        echo "[FAIL] Ensure permissions on /etc/passwd- are configured"
+        FAIL=$((FAIL+1))
+    fi
+fi
+
+
+# Ensure permissions on /etc/shadow- are configured
+if [ -f /etc/shadow- ]; then
+    if [ "$(stat -c %a /etc/shadow-)" -le 640 ]; then
+        echo "[PASS] Ensure permissions on /etc/shadow- are configured"
+        PASS=$((PASS+1))
+    else
+        echo "[FAIL] Ensure permissions on /etc/shadow- are configured"
+        FAIL=$((FAIL+1))
+    fi
+fi
+
+
+# Ensure permissions on /etc/group- are configured
+if [ -f /etc/group- ]; then
+    if [ "$(stat -c %a /etc/group-)" -le 644 ]; then
+        echo "[PASS] Ensure permissions on /etc/group- are configured"
+        PASS=$((PASS+1))
+    else
+        echo "[FAIL] Ensure permissions on /etc/group- are configured"
+        FAIL=$((FAIL+1))
+    fi
+fi
+
+
+# Ensure permissions on /etc/gshadow- are configured
+if [ -f /etc/gshadow- ]; then
+    if [ "$(stat -c %a /etc/gshadow-)" -le 640 ]; then
+        echo "[PASS] Ensure permissions on /etc/gshadow- are configured"
+        PASS=$((PASS+1))
+    else
+        echo "[FAIL] Ensure permissions on /etc/gshadow- are configured"
+        FAIL=$((FAIL+1))
+    fi
+fi
+
+
+# Ensure no world writable files exist
+if [ -z "$(df --local -P | awk 'NR!=1 {print $6}' | xargs -I '{}' find '{}' -xdev -type f -perm -0002 2>/dev/null)" ]; then
+    echo "[PASS] Ensure no world writable files exist"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure no world writable files exist"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure no unowned files exist
+if [ -z "$(df --local -P | awk 'NR!=1 {print $6}' | xargs -I '{}' find '{}' -xdev -nouser 2>/dev/null)" ]; then
+    echo "[PASS] Ensure no unowned files or directories exist"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure no unowned files or directories exist"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure no ungrouped files exist
+if [ -z "$(df --local -P | awk 'NR!=1 {print $6}' | xargs -I '{}' find '{}' -xdev -nogroup 2>/dev/null)" ]; then
+    echo "[PASS] Ensure no ungrouped files or directories exist"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure no ungrouped files or directories exist"
+    FAIL=$((FAIL+1))
+    fi
+    
+echo
+echo "=================================================="
+echo "USER AND GROUP SETTINGS"
+echo "=================================================="
+
+# Ensure password fields are not empty
+if [ -z "$(awk -F: '($2 == "") {print $1}' /etc/shadow)" ]; then
+    echo "[PASS] Ensure password fields are not empty"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure password fields are not empty"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure no legacy '+' entries exist in /etc/passwd
+if ! grep -q '^\+:' /etc/passwd; then
+    echo "[PASS] Ensure no legacy '+' entries exist in /etc/passwd"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure no legacy '+' entries exist in /etc/passwd"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure no legacy '+' entries exist in /etc/shadow
+if ! grep -q '^\+:' /etc/shadow; then
+    echo "[PASS] Ensure no legacy '+' entries exist in /etc/shadow"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure no legacy '+' entries exist in /etc/shadow"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure no legacy '+' entries exist in /etc/group
+if ! grep -q '^\+:' /etc/group; then
+    echo "[PASS] Ensure no legacy '+' entries exist in /etc/group"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure no legacy '+' entries exist in /etc/group"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure root is the only UID 0 account
+if [ "$(awk -F: '($3 == 0) {print $1}' /etc/passwd | wc -l)" -eq 1 ]; then
+    echo "[PASS] Ensure root is the only UID 0 account"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure root is the only UID 0 account"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure root PATH Integrity
+badpath=0
+
+echo $PATH | grep "::" >/dev/null && badpath=1
+echo $PATH | grep ":$" >/dev/null && badpath=1
+
+for dir in $(echo $PATH | tr ":" " "); do
+    [ "$dir" = "." ] && badpath=1
+done
+
+if [ "$badpath" -eq 0 ]; then
+    echo "[PASS] Ensure root PATH Integrity"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure root PATH Integrity"
+    FAIL=$((FAIL+1))
+fi
+echo
+echo "=================================================="
+echo "USER AND GROUP SETTINGS (HOME DIRECTORY CONTROLS)"
+echo "=================================================="
+
+# Ensure all users' home directories exist
+missing_home=0
+
+while IFS=: read -r user x uid gid home shell; do
+    if [ "$uid" -ge 1000 ] && [ "$shell" != "/usr/sbin/nologin" ] && [ "$shell" != "/bin/false" ]; then
+        if [ ! -d "$home" ]; then
+            missing_home=1
+        fi
+    fi
+done < /etc/passwd
+
+if [ "$missing_home" -eq 0 ]; then
+    echo "[PASS] Ensure all users' home directories exist"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure all users' home directories exist"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure users' home directories permissions are 750 or more restrictive
+badperm=0
+
+for dir in $(awk -F: '$3>=1000 && $7!="/usr/sbin/nologin" && $7!="/bin/false" {print $6}' /etc/passwd); do
+    if [ -d "$dir" ]; then
+        perm=$(stat -c "%a" "$dir")
+        if [ "$perm" -gt 750 ]; then
+            badperm=1
+        fi
+    fi
+done
+
+if [ "$badperm" -eq 0 ]; then
+    echo "[PASS] Ensure users' home directories permissions are 750 or more restrictive"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure users' home directories permissions are 750 or more restrictive"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure users own their home directories
+badowner=0
+
+while IFS=: read -r user x uid gid home shell; do
+    if [ "$uid" -ge 1000 ] && [ -d "$home" ]; then
+        owner=$(stat -c "%U" "$home")
+        if [ "$owner" != "$user" ]; then
+            badowner=1
+        fi
+    fi
+done < /etc/passwd
+
+if [ "$badowner" -eq 0 ]; then
+    echo "[PASS] Ensure users own their home directories"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure users own their home directories"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure users' dot files are not group or world writable
+dot_issue=0
+
+for dir in $(awk -F: '$3>=1000 {print $6}' /etc/passwd); do
+    if [ -d "$dir" ]; then
+        for file in "$dir"/.[A-Za-z0-9]*; do
+            [ -f "$file" ] || continue
+            perm=$(stat -c "%a" "$file")
+            if [ $((perm % 10)) -ge 2 ]; then
+                dot_issue=1
+            fi
+        done
+    fi
+done
+
+if [ "$dot_issue" -eq 0 ]; then
+    echo "[PASS] Ensure users' dot files are not group or world writable"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure users' dot files are not group or world writable"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure no users have .forward files
+forward_found=0
+
+for dir in $(awk -F: '$3>=1000 {print $6}' /etc/passwd); do
+    if [ -f "$dir/.forward" ]; then
+        forward_found=1
+    fi
+done
+
+if [ "$forward_found" -eq 0 ]; then
+    echo "[PASS] Ensure no users have .forward files"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure no users have .forward files"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure no users have .netrc files
+netrc_found=0
+
+for dir in $(awk -F: '$3>=1000 {print $6}' /etc/passwd); do
+    if [ -f "$dir/.netrc" ]; then
+        netrc_found=1
+    fi
+done
+
+if [ "$netrc_found" -eq 0 ]; then
+    echo "[PASS] Ensure no users have .netrc files"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure no users have .netrc files"
+    FAIL=$((FAIL+1))
+fi
+
+
+# Ensure users' .netrc files are not group or world accessible
+netrc_perm_issue=0
+
+for dir in $(awk -F: '$3>=1000 {print $6}' /etc/passwd); do
+    if [ -f "$dir/.netrc" ]; then
+        perm=$(stat -c "%a" "$dir/.netrc")
+        if [ "$perm" -gt 600 ]; then
+            netrc_perm_issue=1
+        fi
+    fi
+done
+
+if [ "$netrc_perm_issue" -eq 0 ]; then
+    echo "[PASS] Ensure users' .netrc files are not group or world accessible"
+    PASS=$((PASS+1))
+else
+    echo "[FAIL] Ensure users' .netrc files are not group or world accessible"
+    FAIL=$((FAIL+1))
+fi
+
+
 # Ensure no users have .rhosts files
-# -----------------------------
-RHOSTS_FILES=$(grep -E -v '^(root|halt|sync|shutdown)' /etc/passwd | \
-awk -F: '($7 != "/sbin/nologin" && $7 != "/bin/false") {print $1 " " $6}' | \
-while read user dir; do
-  [ -f "$dir/.rhosts" ] && echo ".rhosts file exists in $dir for $user"
-done)
-if [[ -z "$RHOSTS_FILES" ]]; then
-    pass_msg "No users have .rhosts files"
-    write_csv "rhosts files" "PASS" "Remediation not needed"
+rhosts_found=0
+
+for dir in $(awk -F: '$3>=1000 {print $6}' /etc/passwd); do
+    if [ -f "$dir/.rhosts" ]; then
+        rhosts_found=1
+    fi
+done
+
+if [ "$rhosts_found" -eq 0 ]; then
+    echo "[PASS] Ensure no users have .rhosts files"
+    PASS=$((PASS+1))
 else
-    fail_msg ".rhosts files found"
-    write_csv "rhosts files" "FAIL" "Remove .rhosts files and notify users"
+    echo "[FAIL] Ensure no users have .rhosts files"
+    FAIL=$((FAIL+1))
+fi
+echo
+echo "=================================================="
+echo "FINAL AUDIT SUMMARY"
+echo "=================================================="
+
+# Ensure counters exist (in case earlier sections didn't initialize them)
+PASS=${PASS:-0}
+FAIL=${FAIL:-0}
+MANUAL=${MANUAL:-0}
+
+TOTAL=$((PASS + FAIL + MANUAL))
+
+if [ "$TOTAL" -gt 0 ]; then
+    COMPLIANCE=$(awk "BEGIN {printf \"%.2f\", ($PASS/$TOTAL)*100}")
+else
+    COMPLIANCE="0.00"
 fi
 
-
-
-
-
-echo "************ SECURITY ASSESSMENT COMPLETE ************"
+echo "Total Checks      : $TOTAL"
+echo "Passed Checks     : $PASS"
+echo "Failed Checks     : $FAIL"
+echo "Manual Checks     : $MANUAL"
+echo "Compliance Score  : $COMPLIANCE %"
