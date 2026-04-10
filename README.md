@@ -148,6 +148,14 @@ cd /opt/adhiambo
 bash adhiambo.sh --tech ubuntu --level 2
 ```
 
+Each Engine script also supports a `--help` flag that prints usage information, available options, defaults, and examples, then exits without running any checks. This is intended as a quick field reference for operators.
+
+```bash
+bash engine/docker.sh --help
+```
+
+If an Engine script is invoked with no arguments, it runs with defaults — Level 1 scan, no image, and technology-appropriate defaults for any optional parameters. This keeps the tool low-friction for first-time runs and buy-in demonstrations.
+
 This manual invocation model is appropriate for v1 given the nature of the environments being assessed. Automated scheduling and remote execution are candidates for a future version.
 
 ### 6.6 Access & Connectivity Model
@@ -170,10 +178,47 @@ Each Engine script produces structured findings that are passed to the Reporter.
 |--------|-------------|
 | **Check Name** | The short identifier for the CIS control being evaluated. |
 | **Description** | A plain-language explanation of what the check is testing and why it matters. |
-| **Status** | The result of the check: `PASS`, `FAIL`, or `N/A`. |
-| **Remediation** | The specific action required to resolve a failing check. Empty for PASS and N/A results. |
+| **Status** | The result of the check: `PASS`, `FAIL`, `N/A`, `SKIPPED`, or `MANUAL_REVIEW`. |
+| **Remediation** | The specific action required to resolve a failing check. For `SKIPPED` checks, contains the reason the check was not run. For `MANUAL_REVIEW` checks, contains the captured command output. Empty for PASS and N/A results. |
 
 The Reporter generates output in three formats from a single findings input: **CSV** (for data processing and import into other tools), **JSON** (for programmatic consumption and integration), and **TXT** (for human-readable review and documentation).
+
+### 6.5 Console Output
+
+In addition to the three file-based report formats, each Engine script streams live output to the console as checks execute. This provides real-time visibility into scan progress, supports debugging, and allows the operator to identify where a scan is stalling without waiting for the final report.
+
+The console output has three layers:
+
+**Section headers** — printed before each group of checks to visually separate the CIS benchmark sections as the scan progresses.
+
+**Per-check status lines** — printed as each check completes. The format is consistent across all Engine scripts:
+
+```
+[PASS]           2.1   Ensure network traffic is restricted between containers
+[FAIL]           2.2   Ensure logging level is set to info
+[MANUAL_REVIEW]  2.6   Ensure TLS authentication for Docker daemon is configured
+[SKIPPED: No image provided]  4.1  Ensure a user for the container has been created
+```
+
+**Manual review blocks** — for checks that cannot be fully automated (`MANUAL_REVIEW`), the relevant command output is collected during the section and printed as a block at the end of that section, before the next section begins. This keeps the per-check output readable while ensuring the operator can review raw output in context. The same output is also written to the Remediation column of the CSV report.
+
+**Scan summary block** — after all checks have run, a summary block is printed to the console showing the total count of each status across the entire scan, along with the path to the generated report file. The summary block appears in the console only and is not written to any report file.
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ SCAN SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PASS             18
+  FAIL              5
+  MANUAL_REVIEW     3
+  SKIPPED           4
+  N/A               2
+  ──────────────────
+  TOTAL            32
+
+  Report saved to: adhiambo_docker_2026-04-10T1143.csv
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
 
 ### 6.7 Tool Architecture
 
@@ -255,8 +300,12 @@ Every finding across all three formats contains the same four fields:
 |--------|-------------|
 | **Check Name** | Short identifier for the CIS control being evaluated. |
 | **Description** | Plain-language explanation of what the check tests and why it matters. |
-| **Status** | `PASS`, `FAIL`, or `N/A`. |
-| **Remediation** | The specific action to resolve a failing check. Blank for PASS and N/A results. |
+| **Status** | `PASS`, `FAIL`, `N/A`, `SKIPPED`, or `MANUAL_REVIEW`. |
+| **Remediation** | The specific action to resolve a failing check. For `SKIPPED` checks, contains the reason the check was not run. For `MANUAL_REVIEW` checks, contains the captured command output. Blank for `PASS` and `N/A` results. |
+
+**4. Console Output**
+
+Each Engine script streams live output to the console as checks execute. The console output includes section headers, a per-check status line for every check as it completes, manual review blocks at the end of each section for checks requiring operator review, and a scan summary block at the end of the run. The summary block is console-only and is not written to any report file. See Section 6.5 for the full console output specification.
 
 ### 7.2 Process & Engagement Deliverables
 
@@ -270,9 +319,12 @@ Every finding across all three formats contains the same four fields:
 v1 is considered complete when:
 
 - All five technology Engine scripts are built, peer-reviewed, and functional for Level 1 and Level 2.
+- Each Engine script runs with sensible defaults when invoked with no arguments.
+- Each Engine script produces correct help output when invoked with `--help`.
 - The Researcher correctly identifies running technologies on a target instance.
 - The Reporter successfully generates CSV, JSON, and TXT output from Engine findings.
 - All four report columns (Check Name, Description, Status, Remediation) are consistently populated across all formats.
+- Console output streams correctly during scan execution, including section headers, per-check status lines, manual review blocks, and the scan summary block.
 - The Access & Permissions Framework and VAPT RoE Template are documented and approved.
 
 
@@ -336,6 +388,8 @@ This positions the organisation as a comprehensive security partner rather than 
 | **VAPT** | Vulnerability Assessment and Penetration Testing — a security assessment methodology that identifies and validates vulnerabilities in a target environment. |
 | **SOP** | Standard Operating Procedure — the organisation's established baseline for how infrastructure should be provisioned and managed. |
 | **Infrastructure Hardening** | The process of reducing a system's attack surface by applying security configurations and removing unnecessary functionality. |
+| **SKIPPED** | A check result status indicating the check was not run. The reason is recorded in the Remediation field (e.g. a required tool is not installed, or a required parameter was not provided). |
+| **MANUAL_REVIEW** | A check result status indicating the check cannot be fully automated. The relevant command output is captured and provided to the operator for manual assessment. |
 
 ---
 
