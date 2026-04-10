@@ -570,7 +570,6 @@ check_log_disconnections() {
 # ------------------------------------------
 check_log_statement() {
     local STANDARD="Ensure log_statement is set correctly"
-    local EXPECTED="ddl"
     local REMEDIATION="Run: alter system set log_statement='ddl'; select pg_reload_conf();"
 
     get_postgres_credentials
@@ -579,10 +578,10 @@ check_log_statement() {
 
     if [[ "$result" == "SKIP" ]]; then
         write_csv "$STANDARD" "SKIPPED" "Database credentials not provided"
-    elif [[ "$result" == "$EXPECTED" ]]; then
-        write_csv "$STANDARD" "PASS" "Set to $EXPECTED"
+    elif [[ "$result" == "ddl" || "$result" == "mod" || "$result" == "all" ]]; then
+        write_csv "$STANDARD" "PASS" "Set to $result"
     else
-        write_csv "$STANDARD" "FAIL" "Expected $EXPECTED but found $result. $REMEDIATION"
+        write_csv "$STANDARD" "FAIL" "log_statement is '$result'. Expected one of: ddl, mod, all. $REMEDIATION"
     fi
 }
 
