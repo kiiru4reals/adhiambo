@@ -220,11 +220,11 @@ check_postgres_data_cluster() {
 }
 
 # ==========================================
-# CHECK 5: Ensure postgres umask is 077
+# CHECK 5: Ensure postgres umask is 0077
 # ==========================================
 check_postgres_umask() {
     STANDARD="Ensure the file permissions mask is correct"
-    REMEDIATION="Set the postgres user's umask to 077 in .bash_profile (or .profile/.bashrc). Example: 'echo \"umask 077\" >> ~/.bash_profile' and then 'source ~/.bash_profile'"
+    REMEDIATION="Set the postgres user's umask to 0077 in .bash_profile (or .profile/.bashrc). Example: 'echo \"umask 077\" >> ~/.bash_profile' and then 'source ~/.bash_profile'"
 
     UMASK_VALUE=$(sudo -u postgres bash -c 'umask' | tr -d '[:space:]')
 
