@@ -228,7 +228,7 @@ check_postgres_umask() {
 
     UMASK_VALUE=$(sudo -u postgres bash -c 'umask' | tr -d '[:space:]')
 
-    if [[ "$UMASK_VALUE" == "0077" || "$UMASK_VALUE" == "077" ]]; then
+    if [[ "$UMASK_VALUE" == "0077" || "$UMASK_VALUE" == "0077" ]]; then
         write_csv "$STANDARD" "PASS" "Postgres user's umask is correctly set to $UMASK_VALUE"
     else
         write_csv "$STANDARD" "FAIL" "Postgres user's umask is $UMASK_VALUE. Update the postgres profile to use umask 077"
@@ -250,6 +250,9 @@ check_pg_wheel_group() {
     fi
 }
 
+# ==========================================
+# CHECK 7: Ensure the log destinations are set correctly
+# ==========================================
 check_postgres_log_destination() {
     STANDARD="Ensure the log destinations are set correctly"
     REMEDIATION="Set the log_destination parameter in postgresql.conf or via ALTER SYSTEM, e.g., 'ALTER SYSTEM SET log_destination = ''csvlog'';' and reload config with 'SELECT pg_reload_conf();'"
@@ -277,6 +280,9 @@ check_postgres_log_destination() {
 }
 
 
+# ==========================================
+# CHECK 8: Ensure the logging collector is enabled
+# ==========================================
 check_postgres_logging_collector() {
     STANDARD="Ensure the logging collector is enabled"
     REMEDIATION="Enable the logging_collector in postgresql.conf or via ALTER SYSTEM: 'ALTER SYSTEM SET logging_collector = ''on'';'"
@@ -499,6 +505,9 @@ check_postgres_debug_print_plan() {
     fi
 }
 
+# ------------------------------------------
+# 17. Ensure 'debug_pretty_print' is enabled
+# ------------------------------------------
 check_debug_pretty_print() {
     local STANDARD="Ensure debug_pretty_print is enabled"
     local REMEDIATION="Run: alter system set debug_pretty_print = 'on'; select pg_reload_conf();"
@@ -516,6 +525,9 @@ check_debug_pretty_print() {
     fi
 }
 
+# ------------------------------------------
+# 18. Ensure 'log_connections' is enabled
+# ------------------------------------------
 check_log_connections() {
     local STANDARD="Ensure log_connections is enabled"
     local REMEDIATION="Run: alter system set log_connections = 'on'; restart PostgreSQL"
@@ -533,6 +545,9 @@ check_log_connections() {
     fi
 }
 
+# ------------------------------------------
+# 19. Ensure 'log_disconnections' is enabled
+# ------------------------------------------
 check_log_disconnections() {
     local STANDARD="Ensure log_disconnections is enabled"
     local REMEDIATION="Run: alter system set log_disconnections = 'on'; restart PostgreSQL"
@@ -550,6 +565,9 @@ check_log_disconnections() {
     fi
 }
 
+# ------------------------------------------
+# 20. Ensure 'log_statement' is set correctly
+# ------------------------------------------
 check_log_statement() {
     local STANDARD="Ensure log_statement is set correctly"
     local EXPECTED="ddl"
