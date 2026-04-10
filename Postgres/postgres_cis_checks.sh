@@ -54,7 +54,7 @@ get_postgres_credentials() {
     fi
 }
 
-# FIX: Corrected variable names from DB_* to PG_*
+
 run_pg_query() {
     local query="$1"
 
@@ -469,7 +469,6 @@ check_postgres_debug_print_rewritten() {
         return
     fi
 
-    # FIX: Use tr -d instead of xargs
     export PGPASSWORD="$PG_PASSWORD"
     VALUE=$(psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -t -c "SHOW debug_print_rewritten;" 2>/dev/null | tr -d '[:space:]')
     unset PGPASSWORD
