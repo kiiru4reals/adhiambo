@@ -54,6 +54,7 @@ get_postgres_credentials() {
     fi
 }
 
+# FIX: Corrected variable names from DB_* to PG_*
 run_pg_query() {
     local query="$1"
 
@@ -62,7 +63,7 @@ run_pg_query() {
         return
     fi
 
-    PGPASSWORD="$DB_PASS" psql -U "$DB_USER" -d "$DB_NAME" -h "$DB_HOST" -p "$DB_PORT" -t -c "$query" 2>/dev/null | xargs
+    PGPASSWORD="$PG_PASSWORD" psql -U "$PG_USER" -d "$PG_DB" -h "$PG_HOST" -p "$PG_PORT" -t -c "$query" 2>/dev/null | tr -d '[:space:]'
 }
 
 
@@ -219,16 +220,15 @@ check_postgres_data_cluster() {
 }
 
 # ==========================================
-# CHECK 5: Ensure postgres umask is 077
+# CHECK 5: Ensure postgres umask is 0077
 # ==========================================
 check_postgres_umask() {
     STANDARD="Ensure the file permissions mask is correct"
-    REMEDIATION="Set the postgres user's umask to 077 in .bash_profile (or .profile/.bashrc). Example: 'echo \"umask 077\" >> ~/.bash_profile' and then 'source ~/.bash_profile'"
+    REMEDIATION="Set the postgres user's umask to 0077 in .bash_profile (or .profile/.bashrc). Example: 'echo \"umask 077\" >> ~/.bash_profile' and then 'source ~/.bash_profile'"
 
-    # Check the postgres user's umask
-    UMASK_VALUE=$(sudo -u postgres bash -c 'umask')
+    UMASK_VALUE=$(sudo -u postgres bash -c 'umask' | tr -d '[:space:]')
 
-    if [[ "$UMASK_VALUE" == "0077" || "$UMASK_VALUE" == "077" ]]; then
+    if [[ "$UMASK_VALUE" == "0077" || "$UMASK_VALUE" == "0077" ]]; then
         write_csv "$STANDARD" "PASS" "Postgres user's umask is correctly set to $UMASK_VALUE"
     else
         write_csv "$STANDARD" "FAIL" "Postgres user's umask is $UMASK_VALUE. Update the postgres profile to use umask 077"
@@ -250,11 +250,13 @@ check_pg_wheel_group() {
     fi
 }
 
+# ==========================================
+# CHECK 7: Ensure the log destinations are set correctly
+# ==========================================
 check_postgres_log_destination() {
     STANDARD="Ensure the log destinations are set correctly"
     REMEDIATION="Set the log_destination parameter in postgresql.conf or via ALTER SYSTEM, e.g., 'ALTER SYSTEM SET log_destination = ''csvlog'';' and reload config with 'SELECT pg_reload_conf();'"
 
-    # Prompt for credentials if not already provided
     get_postgres_credentials
     if [[ "${SKIP_DB_CHECKS:-1}" -eq 1 ]]; then
         write_csv "$STANDARD" "SKIPPED" "Check skipped because database credentials were not provided"
@@ -262,9 +264,7 @@ check_postgres_log_destination() {
     fi
 
     export PGPASSWORD="$PG_PASSWORD"
-
-    LOG_DEST=$(psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -t -c "SHOW log_destination;" 2>/dev/null | xargs)
-
+    LOG_DEST=$(psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -t -c "SHOW log_destination;" 2>/dev/null | tr -d '[:space:]')
     unset PGPASSWORD
 
     if [[ -z "$LOG_DEST" ]]; then
@@ -280,11 +280,13 @@ check_postgres_log_destination() {
 }
 
 
+# ==========================================
+# CHECK 8: Ensure the logging collector is enabled
+# ==========================================
 check_postgres_logging_collector() {
     STANDARD="Ensure the logging collector is enabled"
     REMEDIATION="Enable the logging_collector in postgresql.conf or via ALTER SYSTEM: 'ALTER SYSTEM SET logging_collector = ''on'';'"
 
-    # Prompt for credentials if not already provided
     get_postgres_credentials
     if [[ "${SKIP_DB_CHECKS:-1}" -eq 1 ]]; then
         write_csv "$STANDARD" "SKIPPED" "Check skipped because database credentials were not provided"
@@ -292,9 +294,7 @@ check_postgres_logging_collector() {
     fi
 
     export PGPASSWORD="$PG_PASSWORD"
-
-    LOG_COLLECTOR=$(psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -t -c "SHOW logging_collector;" 2>/dev/null | xargs)
-
+    LOG_COLLECTOR=$(psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -t -c "SHOW logging_collector;" 2>/dev/null | tr -d '[:space:]')
     unset PGPASSWORD
 
     if [[ -z "$LOG_COLLECTOR" ]]; then
@@ -302,7 +302,7 @@ check_postgres_logging_collector() {
         return
     fi
 
-    if [[ "$LOG_COLLECTOR" =~ on ]]; then
+    if [[ "$LOG_COLLECTOR" == "on" ]]; then
         write_csv "$STANDARD" "PASS" "logging_collector is enabled"
     else
         write_csv "$STANDARD" "FAIL" "logging_collector is '$LOG_COLLECTOR'. Remediate by enabling it: 'ALTER SYSTEM SET logging_collector = ''on'';'"
@@ -316,7 +316,6 @@ check_postgres_log_directory() {
     STANDARD="Ensure the log file destination directory is set correctly"
     REMEDIATION="Set the log_directory according to your organization's logging policy, e.g., 'ALTER SYSTEM SET log_directory=''/var/log/postgres/11'';' and reload with 'SELECT pg_reload_conf();'"
 
-    # Prompt for credentials if not already provided
     get_postgres_credentials
     if [[ "${SKIP_DB_CHECKS:-1}" -eq 1 ]]; then
         write_csv "$STANDARD" "SKIPPED" "Check skipped because database credentials were not provided"
@@ -324,9 +323,7 @@ check_postgres_log_directory() {
     fi
 
     export PGPASSWORD="$PG_PASSWORD"
-
-    LOG_DIR=$(psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -t -c "SHOW log_directory;" 2>/dev/null | xargs)
-
+    LOG_DIR=$(psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -t -c "SHOW log_directory;" 2>/dev/null | tr -d '[:space:]')
     unset PGPASSWORD
 
     if [[ -z "$LOG_DIR" ]]; then
@@ -334,12 +331,11 @@ check_postgres_log_directory() {
         return
     fi
 
-    # Check if the directory is set (non-empty)
     if [[ -n "$LOG_DIR" ]]; then
         write_csv "$STANDARD" "PASS" "PostgreSQL log_directory is set to '$LOG_DIR'"
-   fi
-
+    fi
 }
+
 # ------------------------------------------
 # 10. Ensure the filename pattern for log files is set correctly
 # ------------------------------------------
@@ -354,15 +350,13 @@ check_postgres_log_filename() {
     fi
 
     export PGPASSWORD="$PG_PASSWORD"
-    VALUE=$(psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -t -c "SHOW log_filename;" 2>/dev/null | xargs)
+    VALUE=$(psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -t -c "SHOW log_filename;" 2>/dev/null | tr -d '[:space:]')
     unset PGPASSWORD
 
     if [[ -z "$VALUE" ]]; then
-        write_csv "$STANDARD" "FAIL" "Could not query log_filename"
-    elif [[ -n "$VALUE" ]]; then
-        write_csv "$STANDARD" "PASS" "log_filename is set to '$VALUE'"
+        write_csv "$STANDARD" "FAIL" "Could not query log_filename or value is empty. Remediate per policy"
     else
-        write_csv "$STANDARD" "FAIL" "log_filename is empty. Remediate per policy"
+        write_csv "$STANDARD" "PASS" "log_filename is set to '$VALUE'"
     fi
 }
 
@@ -380,7 +374,7 @@ check_postgres_log_file_mode() {
     fi
 
     export PGPASSWORD="$PG_PASSWORD"
-    VALUE=$(psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -t -c "SHOW log_file_mode;" 2>/dev/null | xargs)
+    VALUE=$(psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -t -c "SHOW log_file_mode;" 2>/dev/null | tr -d '[:space:]')
     unset PGPASSWORD
 
     if [[ "$VALUE" == "0600" ]]; then
@@ -404,7 +398,7 @@ check_postgres_log_truncate_on_rotation() {
     fi
 
     export PGPASSWORD="$PG_PASSWORD"
-    VALUE=$(psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -t -c "SHOW log_truncate_on_rotation;" 2>/dev/null | xargs)
+    VALUE=$(psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -t -c "SHOW log_truncate_on_rotation;" 2>/dev/null | tr -d '[:space:]')
     unset PGPASSWORD
 
     if [[ "$VALUE" == "on" ]]; then
@@ -428,7 +422,7 @@ check_postgres_syslog_facility() {
     fi
 
     export PGPASSWORD="$PG_PASSWORD"
-    VALUE=$(psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -t -c "SHOW syslog_facility;" 2>/dev/null | xargs)
+    VALUE=$(psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -t -c "SHOW syslog_facility;" 2>/dev/null | tr -d '[:space:]')
     unset PGPASSWORD
 
     if [[ -n "$VALUE" ]]; then
@@ -452,7 +446,7 @@ check_postgres_debug_print_parse() {
     fi
 
     export PGPASSWORD="$PG_PASSWORD"
-    VALUE=$(psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -t -c "SHOW debug_print_parse;" 2>/dev/null | xargs)
+    VALUE=$(psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -t -c "SHOW debug_print_parse;" 2>/dev/null | tr -d '[:space:]')
     unset PGPASSWORD
 
     if [[ "$VALUE" == "off" ]]; then
@@ -475,8 +469,9 @@ check_postgres_debug_print_rewritten() {
         return
     fi
 
+    # FIX: Use tr -d instead of xargs
     export PGPASSWORD="$PG_PASSWORD"
-    VALUE=$(psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -t -c "SHOW debug_print_rewritten;" 2>/dev/null | xargs)
+    VALUE=$(psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -t -c "SHOW debug_print_rewritten;" 2>/dev/null | tr -d '[:space:]')
     unset PGPASSWORD
 
     if [[ "$VALUE" == "off" ]]; then
@@ -500,7 +495,7 @@ check_postgres_debug_print_plan() {
     fi
 
     export PGPASSWORD="$PG_PASSWORD"
-    VALUE=$(psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -t -c "SHOW debug_print_plan;" 2>/dev/null | xargs)
+    VALUE=$(psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -t -c "SHOW debug_print_plan;" 2>/dev/null | tr -d '[:space:]')
     unset PGPASSWORD
 
     if [[ "$VALUE" == "off" ]]; then
@@ -510,10 +505,14 @@ check_postgres_debug_print_plan() {
     fi
 }
 
+# ------------------------------------------
+# 17. Ensure 'debug_pretty_print' is enabled
+# ------------------------------------------
 check_debug_pretty_print() {
     local STANDARD="Ensure debug_pretty_print is enabled"
     local REMEDIATION="Run: alter system set debug_pretty_print = 'on'; select pg_reload_conf();"
 
+    get_postgres_credentials
     local result
     result=$(run_pg_query "show debug_pretty_print;")
 
@@ -526,10 +525,14 @@ check_debug_pretty_print() {
     fi
 }
 
+# ------------------------------------------
+# 18. Ensure 'log_connections' is enabled
+# ------------------------------------------
 check_log_connections() {
     local STANDARD="Ensure log_connections is enabled"
     local REMEDIATION="Run: alter system set log_connections = 'on'; restart PostgreSQL"
 
+    get_postgres_credentials
     local result
     result=$(run_pg_query "show log_connections;")
 
@@ -542,10 +545,14 @@ check_log_connections() {
     fi
 }
 
+# ------------------------------------------
+# 19. Ensure 'log_disconnections' is enabled
+# ------------------------------------------
 check_log_disconnections() {
     local STANDARD="Ensure log_disconnections is enabled"
     local REMEDIATION="Run: alter system set log_disconnections = 'on'; restart PostgreSQL"
 
+    get_postgres_credentials
     local result
     result=$(run_pg_query "show log_disconnections;")
 
@@ -558,20 +565,23 @@ check_log_disconnections() {
     fi
 }
 
+# ------------------------------------------
+# 20. Ensure 'log_statement' is set correctly
+# ------------------------------------------
 check_log_statement() {
     local STANDARD="Ensure log_statement is set correctly"
-    local EXPECTED="ddl"
     local REMEDIATION="Run: alter system set log_statement='ddl'; select pg_reload_conf();"
 
+    get_postgres_credentials
     local result
     result=$(run_pg_query "show log_statement;")
 
     if [[ "$result" == "SKIP" ]]; then
         write_csv "$STANDARD" "SKIPPED" "Database credentials not provided"
-    elif [[ "$result" == "$EXPECTED" ]]; then
-        write_csv "$STANDARD" "PASS" "Set to $EXPECTED"
+    elif [[ "$result" == "ddl" || "$result" == "mod" || "$result" == "all" ]]; then
+        write_csv "$STANDARD" "PASS" "Set to $result"
     else
-        write_csv "$STANDARD" "FAIL" "Expected $EXPECTED but found $result. $REMEDIATION"
+        write_csv "$STANDARD" "FAIL" "log_statement is '$result'. Expected one of: ddl, mod, all. $REMEDIATION"
     fi
 }
 
@@ -612,14 +622,13 @@ check_postgres_excessive_admin_privileges() {
 
     export PGPASSWORD="$PG_PASSWORD"
 
-    # List non-postgres roles with admin privileges
     QUERY="
     SELECT rolname
     FROM pg_roles
     WHERE rolname NOT IN ('postgres')
       AND (rolsuper OR rolcreaterole OR rolcreatedb OR rolreplication);"
 
-    RESULTS=$(psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -t -c "$QUERY" 2>/dev/null | xargs)
+    RESULTS=$(psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -t -c "$QUERY" 2>/dev/null | tr -d '[:space:]')
 
     unset PGPASSWORD
 
@@ -652,7 +661,7 @@ check_postgres_security_definer_functions() {
     JOIN pg_namespace n ON p.pronamespace = n.oid
     WHERE prosecdef = true;"
 
-    RESULTS=$(psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -t -c "$QUERY" 2>/dev/null | xargs)
+    RESULTS=$(psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -t -c "$QUERY" 2>/dev/null | tr -d '[:space:]')
 
     unset PGPASSWORD
 
@@ -687,7 +696,7 @@ check_postgres_excessive_dml_privileges() {
       AND grantee NOT LIKE 'pg_%'
     GROUP BY grantee, table_schema, table_name;"
 
-    RESULTS=$(psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -t -c "$QUERY" 2>/dev/null | xargs)
+    RESULTS=$(psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -t -c "$QUERY" 2>/dev/null | tr -d '[:space:]')
 
     unset PGPASSWORD
 
@@ -704,9 +713,7 @@ check_postgres_excessive_dml_privileges() {
 check_postgres_tcp_authentication() {
     STANDARD="Ensure login via host TCP/IP Socket is configured correctly"
     REMEDIATION="Update pg_hba.conf to use scram-sha-256 for remote host entries"
-
-    # Locate pg_hba.conf
-    HBA_FILE=$(sudo -u postgres psql -t -c "SHOW hba_file;" 2>/dev/null | xargs)
+    HBA_FILE=$(sudo -u postgres psql -t -c "SHOW hba_file;" 2>/dev/null | tr -d '[:space:]')
 
     if [[ -z "$HBA_FILE" || ! -f "$HBA_FILE" ]]; then
         write_csv "$STANDARD" "FAIL" "Could not locate pg_hba.conf"
@@ -753,13 +760,12 @@ check_postgres_backend_runtime_parameters() {
         return
     fi
 
-    # Minimal expected values (extendable)
     FAIL=0
-    echo "$OUTPUT" | grep -q "log_connections | on" || FAIL=1
-    echo "$OUTPUT" | grep -q "log_disconnections | on" || FAIL=1
-    echo "$OUTPUT" | grep -q "ignore_system_indexes | off" || FAIL=1
-    echo "$OUTPUT" | grep -q "jit_debugging_support | off" || FAIL=1
-    echo "$OUTPUT" | grep -q "jit_profiling_support | off" || FAIL=1
+    echo "$OUTPUT" | grep -qE "log_connections\s*\|\s*on" || FAIL=1
+    echo "$OUTPUT" | grep -qE "log_disconnections\s*\|\s*on" || FAIL=1
+    echo "$OUTPUT" | grep -qE "ignore_system_indexes\s*\|\s*off" || FAIL=1
+    echo "$OUTPUT" | grep -qE "jit_debugging_support\s*\|\s*off" || FAIL=1
+    echo "$OUTPUT" | grep -qE "jit_profiling_support\s*\|\s*off" || FAIL=1
 
     if [[ $FAIL -eq 0 ]]; then
         write_csv "$STANDARD" "PASS" "Backend runtime parameters match expected secure configuration"
@@ -783,9 +789,7 @@ check_postgres_ssl_enabled() {
     fi
 
     export PGPASSWORD="$PG_PASSWORD"
-
-    SSL_STATUS=$(psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -t -c "SHOW ssl;" 2>/dev/null | xargs)
-
+    SSL_STATUS=$(psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -t -c "SHOW ssl;" 2>/dev/null | tr -d '[:space:]')
     unset PGPASSWORD
 
     if [[ "$SSL_STATUS" == "on" ]]; then
