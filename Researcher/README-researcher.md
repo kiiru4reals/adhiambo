@@ -406,7 +406,7 @@ adhiambo.sh reads engines_to_invoke from JSON
 | 1 | Rocky Linux version enforcement — no version restriction in v1. All detected Rocky Linux versions are passed to the Engine. Limiting support to the latest version is planned for a future iteration. | Open — future iteration |
 | 2 | `scan_id` generation method confirmed as standard `uuidgen`. | Closed |
 | 3 | Researcher JSON file confirmed as a permanent scan artifact. It is retained alongside Engine and Reporter outputs at the end of every scan. | Closed |
-| 4 | Define the exact PostgreSQL version detection command — `pg_isready` may not return version info on all distributions | Open |
+| 4 | PostgreSQL version detection confirmed as `psql --version`. Works on both Ubuntu and Rocky Linux. Returns the client version, which is assumed to match the server version in v1. | Closed |
 
 ---
 
