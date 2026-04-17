@@ -264,6 +264,25 @@ validate_output_dir() {
 }
 
 # =============================================================================
+# ENSURE SCRIPTS ARE EXECUTABLE
+# =============================================================================
+
+ensure_scripts_executable() {
+    local scripts=("${RESEARCHER}")
+    local tech
+    for tech in "${VALID_TECH_VALUES[@]}"; do
+        scripts+=("${ENGINE_SCRIPTS[$tech]}")
+    done
+
+    local script
+    for script in "${scripts[@]}"; do
+        if [[ -f "$script" && ! -x "$script" ]]; then
+            chmod +x "$script"
+        fi
+    done
+}
+
+# =============================================================================
 # PRE-FLIGHT: ENGINE SCRIPT CHECKS
 # =============================================================================
 
@@ -406,6 +425,12 @@ run_auto_detection() {
 
     local researcher_exit=0
     bash "${RESEARCHER}" --output-dir "${OUTPUT_DIR}" --scan-id "${SCAN_ID}" || researcher_exit=$?
+
+    if [[ "$researcher_exit" -eq 3 ]]; then
+        echo ""
+        echo "[INFO] No supported technologies detected. Nothing to scan. Adhiambo will exit."
+        exit 3
+    fi
 
     if [[ "$researcher_exit" -ne 0 ]]; then
         echo "[ERROR] Researcher exited with code ${researcher_exit}. Cannot determine which engines to invoke."
@@ -585,6 +610,9 @@ main() {
         # Fallback for hosts without uuidgen
         SCAN_ID="$(cat /proc/sys/kernel/random/uuid 2>/dev/null || echo "no-uuid-$(date +%s)")"
     fi
+
+    # --- Ensure all scripts are executable ---
+    ensure_scripts_executable
 
     # --- Pre-flight: verify engine scripts exist ---
     if [[ -n "${TECH}" ]]; then
