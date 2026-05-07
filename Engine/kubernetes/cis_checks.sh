@@ -815,52 +815,86 @@ _parse_results() {
   fi
 
   local parsed_tsv
-  parsed_tsv=$(python3 - <<'PYEOF'
+  parsed_tsv=$(python3 - "${RAW_JSON}" <<'PYEOF'
 import json, sys, re
 
 def clean(s):
     """Collapse whitespace and strip for TSV safety."""
     return re.sub(r'[\t\r\n]+', ' ', str(s or '')).strip()
 
-with open(sys.argv[1]) as f:
-    data = json.load(f)
+def iter_json_objects(path):
+    """
+    kube-bench writes one JSON object per target, concatenated in the same
+    file — e.g. {"Controls":[...]}{"Controls":[...]}
+    json.load() cannot handle this; raw_decode walks the file correctly.
+    """
+    with open(path) as f:
+        content = f.read()
+    decoder = json.JSONDecoder()
+    pos = 0
+    while pos < len(content):
+        # Skip whitespace between objects
+        while pos < len(content) and content[pos] in ' \t\n\r':
+            pos += 1
+        if pos >= len(content):
+            break
+        obj, end = decoder.raw_decode(content, pos)
+        yield obj
+        pos = end
 
-# kube-bench JSON root is a list of Controls objects
-controls_list = data if isinstance(data, list) else [data]
+for root in iter_json_objects(sys.argv[1]):
+    # kube-bench v0.8.0 wraps results in a "Controls" key:
+    #   {"Controls": [{...}, {...}]}
+    # Older versions may return a bare list or bare object — handle all forms.
+    if isinstance(root, list):
+        controls_list = root
+    elif isinstance(root, dict) and 'Controls' in root:
+        controls_list = root['Controls'] or []
+    else:
+        controls_list = [root]
 
-for controls in controls_list:
-    section_id   = clean(controls.get('id', ''))
-    section_title = clean(controls.get('text', ''))
-    tests = controls.get('tests', []) or []
-    for test_group in tests:
-        group_id = clean(test_group.get('section', ''))
-        results  = test_group.get('results', []) or []
-        for result in results:
-            check_id    = clean(result.get('test_number', ''))
-            description = clean(result.get('test_desc', ''))
-            kb_status   = clean(result.get('status', '')).upper()
-            remediation = clean(result.get('remediation', ''))
-            scored      = str(result.get('scored', True)).lower()
+    for controls in controls_list:
+        section_id    = clean(controls.get('id', ''))
+        section_title = clean(controls.get('text', '') or controls.get('desc', ''))
 
-            # Map kube-bench status to Adhiambo status
-            if kb_status == 'PASS':
-                status = 'PASS'
-                remediation = ''
-            elif kb_status == 'FAIL':
-                status = 'FAIL'
-            elif kb_status in ('WARN', 'INFO'):
-                status = 'MANUAL_REVIEW'
-                remediation = '[MANUAL REVIEW REQUIRED] ' + remediation
-            else:
-                status = 'MANUAL_REVIEW'
-                remediation = '[MANUAL REVIEW REQUIRED] ' + remediation
+        # Skip any entry with no section id (e.g. summary nodes)
+        if not section_id:
+            continue
 
-            print('\t'.join([
-                check_id, description, status, remediation,
-                section_id, group_id, scored, section_title
-            ]))
+        tests = controls.get('tests', []) or []
+        for test_group in tests:
+            group_id = clean(test_group.get('section', ''))
+            results  = test_group.get('results', []) or []
+            for result in results:
+                check_id    = clean(result.get('test_number', ''))
+                description = clean(result.get('test_desc', ''))
+                kb_status   = clean(result.get('status', '')).upper()
+                remediation = clean(result.get('remediation', ''))
+                scored      = str(result.get('scored', True)).lower()
+
+                # Skip results with no check id
+                if not check_id:
+                    continue
+
+                # Map kube-bench status to Adhiambo status
+                if kb_status == 'PASS':
+                    status = 'PASS'
+                    remediation = ''
+                elif kb_status == 'FAIL':
+                    status = 'FAIL'
+                elif kb_status in ('WARN', 'INFO'):
+                    status = 'MANUAL_REVIEW'
+                    remediation = '[MANUAL REVIEW REQUIRED] ' + remediation
+                else:
+                    status = 'MANUAL_REVIEW'
+                    remediation = '[MANUAL REVIEW REQUIRED] ' + remediation
+
+                print('\t'.join([
+                    check_id, description, status, remediation,
+                    section_id, group_id, scored, section_title
+                ]))
 PYEOF
-  "${RAW_JSON}" 2>&1)
+  )
 
   if [[ $? -ne 0 ]]; then
     _error "Failed to parse kube-bench JSON output."
@@ -895,8 +929,10 @@ PYEOF
     FINDINGS_SECTION[idx]="${section_id}"
     FINDINGS_SCORED[idx]="${scored}"
 
-    # Track section titles
-    SECTION_TITLE["${section_id}"]="${section_title}"
+    # Track section titles — guard against empty section_id
+    if [[ -n "${section_id}" ]]; then
+      SECTION_TITLE["${section_id}"]="${section_title}"
+    fi
 
     (( idx++ )) || true
   done <<< "${parsed_tsv}"
@@ -956,10 +992,12 @@ _print_results() {
     esac
 
     # Update section scoring
-    if [[ "${status}" == "PASS" ]]; then
-      SECTION_PASS["${section}"]=$(( ${SECTION_PASS["${section}"]:-0} + 1 ))
-    elif [[ "${status}" == "FAIL" ]]; then
-      SECTION_FAIL["${section}"]=$(( ${SECTION_FAIL["${section}"]:-0} + 1 ))
+    if [[ -n "${section}" ]]; then
+      if [[ "${status}" == "PASS" ]]; then
+        SECTION_PASS["${section}"]=$(( ${SECTION_PASS["${section}"]:-0} + 1 ))
+      elif [[ "${status}" == "FAIL" ]]; then
+        SECTION_FAIL["${section}"]=$(( ${SECTION_FAIL["${section}"]:-0} + 1 ))
+      fi
     fi
   done
 
@@ -1041,6 +1079,8 @@ _print_summary() {
   echo "${SEPARATOR}"
   echo " COMPLIANCE SCORES"
   echo "${SEPARATOR}"
+  echo "  (Sections with only MANUAL_REVIEW or SKIPPED results are not scored)"
+  echo ""
 
   for section in $(echo "${!SECTION_SCORES[@]}" | tr ' ' '\n' | sort); do
     printf "  Section %-4s %-36s : %s\n" \
@@ -1066,7 +1106,7 @@ _write_report() {
 
   _info "Writing report to ${OUTPUT_FILE}..."
 
-  bash "$(dirname "$0")/reporter_kubernetes.sh" \
+  bash "$(dirname "$0")/../reporter_kubernetes.sh" \
     --output-file "${OUTPUT_FILE}" \
     --findings-json "${RAW_JSON}" \
     --overall-score "${OVERALL_SCORE}" \
