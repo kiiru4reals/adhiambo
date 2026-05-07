@@ -94,43 +94,67 @@ import json, sys, re, csv
 def clean(s):
     return re.sub(r'[\t\r\n]+', ' ', str(s or '')).strip()
 
-with open('${FINDINGS_JSON}') as f:
-    data = json.load(f)
-
-controls_list = data if isinstance(data, list) else [data]
+def iter_json_objects(path):
+    with open(path) as f:
+        content = f.read()
+    decoder = json.JSONDecoder()
+    pos = 0
+    while pos < len(content):
+        while pos < len(content) and content[pos] in ' \t\n\r':
+            pos += 1
+        if pos >= len(content):
+            break
+        obj, end = decoder.raw_decode(content, pos)
+        yield obj
+        pos = end
 
 writer = csv.writer(sys.stdout, quoting=csv.QUOTE_ALL, lineterminator='\n')
 
-for controls in controls_list:
-    section_id = clean(controls.get('id', ''))
-    tests = controls.get('tests', []) or []
-    for test_group in tests:
-        results = test_group.get('results', []) or []
-        for result in results:
-            check_id    = clean(result.get('test_number', ''))
-            description = clean(result.get('test_desc', ''))
-            kb_status   = clean(result.get('status', '')).upper()
-            remediation = clean(result.get('remediation', ''))
-            scored      = result.get('scored', True)
+for root in iter_json_objects('${FINDINGS_JSON}'):
+    if isinstance(root, list):
+        controls_list = root
+    elif isinstance(root, dict) and 'Controls' in root:
+        controls_list = root['Controls'] or []
+    else:
+        controls_list = [root]
 
-            # Level filter
-            if ${level} == 1 and not scored:
-                continue
+    for controls in controls_list:
+        section_id    = clean(controls.get('id', ''))
+        section_title = clean(controls.get('text', '') or controls.get('desc', ''))
+        if not section_id:
+            continue
 
-            # Status mapping
-            if kb_status == 'PASS':
-                status = 'PASS'
-                remediation = ''
-            elif kb_status == 'FAIL':
-                status = 'FAIL'
-            elif kb_status in ('WARN', 'INFO'):
-                status = 'MANUAL_REVIEW'
-                remediation = '[MANUAL REVIEW REQUIRED] ' + remediation
-            else:
-                status = 'MANUAL_REVIEW'
-                remediation = '[MANUAL REVIEW REQUIRED] ' + remediation
+        tests = controls.get('tests', []) or []
+        for test_group in tests:
+            results = test_group.get('results', []) or []
+            for result in results:
+                check_id    = clean(result.get('test_number', ''))
+                description = clean(result.get('test_desc', ''))
+                kb_status   = clean(result.get('status', '')).upper()
+                remediation = clean(result.get('remediation', ''))
+                scored      = result.get('scored', True)
 
-            writer.writerow([check_id, description, status, remediation])
+                if not check_id:
+                    continue
+
+                # Level filter
+                if ${level} == 1 and not scored:
+                    continue
+
+                # Status mapping
+                if kb_status == 'PASS':
+                    status = 'PASS'
+                    remediation = ''
+                elif kb_status == 'FAIL':
+                    status = 'FAIL'
+                elif kb_status in ('WARN', 'INFO'):
+                    status = 'MANUAL_REVIEW'
+                    remediation = '[MANUAL REVIEW REQUIRED] ' + remediation
+                else:
+                    status = 'MANUAL_REVIEW'
+                    remediation = '[MANUAL REVIEW REQUIRED] ' + remediation
+
+                writer.writerow([check_id, description, status, remediation])
 PYEOF
 }
 
