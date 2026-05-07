@@ -658,19 +658,30 @@ If the uninstall fails, the engine prints a warning with the manual removal comm
 
 ### 6.1 kube-bench JSON Structure
 
-kube-bench produces a JSON document structured as an array of `Controls` objects — one per target. Each `Controls` object contains a `tests` array of test groups (benchmark sections), and each test group contains a `results` array of individual check outcomes.
+kube-bench produces output as one or more concatenated JSON objects in the same file — one per target. Each object has a `Controls` wrapper key containing an array of section objects. Each section object contains a `tests` array of subsection groups, and each subsection group contains a `results` array of individual check outcomes.
+
+The actual on-disk format is:
+
+```
+{"Controls":[{...}]}{"Controls":[{...}]}{"Controls":[{...}]}
+```
+
+This is not a valid single JSON document. The parser uses `JSONDecoder.raw_decode()` to walk the file and yield each object in sequence.
 
 The fields used by the Adhiambo parser are:
 
 | Field | Location | Used for |
 |---|---|---|
-| `id` | `Controls` | Section number (e.g. `"1"`) |
-| `text` | `Controls` | Section title (e.g. `"Control Plane Components"`) |
+| `id` | `Controls[]` entry | Subsection number (e.g. `"1.1"`, `"1.2"`) |
+| `text` or `desc` | `Controls[]` entry | Subsection title. kube-bench v0.8.0 uses `desc` at the subsection level — the parser checks `text` first and falls back to `desc`. |
+| `section` | `tests[]` entry | Subsection identifier within a controls block |
 | `test_number` | `result` | Check ID (e.g. `"1.2.3"`) |
 | `test_desc` | `result` | Check description |
 | `status` | `result` | kube-bench result: `PASS`, `FAIL`, `WARN`, `INFO` |
 | `remediation` | `result` | Remediation text provided by kube-bench |
 | `scored` | `result` | `true` = Level 1 scored check; `false` = Level 2 unscored check |
+
+Controls entries where `id` is empty or absent (e.g. summary nodes appended by kube-bench) are silently skipped. Results where `test_number` is empty are similarly skipped.
 
 ### 6.2 Status Mapping
 
@@ -723,6 +734,8 @@ Score = (PASS count / (PASS count + FAIL count)) × 100
 `MANUAL_REVIEW`, `SKIPPED`, and `N/A` results are excluded from both the numerator and denominator. The score reflects only checks that produced a definitive automated result. If no checks produced a `PASS` or `FAIL` result, the score for that scope is reported as `N/A (no scoreable results)`.
 
 Scores are rounded to one decimal place.
+
+Sections where all results are `MANUAL_REVIEW` or `SKIPPED` produce no `PASS` or `FAIL` counts. The denominator for those sections is zero, so they are excluded from the score table entirely rather than being reported as `0%`. The score table includes a note to this effect so the operator understands the absence of a section is not a data loss — it means every check in that section requires manual review or was skipped.
 
 ### 7.2 Score Output
 
